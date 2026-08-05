@@ -13,7 +13,9 @@ permissions:
   actions: write
 
 jobs:
-  # STAGE 1: Compile all binaries independently across individual nodes
+  # =========================================================================
+  # STAGE 1: Isolated Matrix Compilation Nodes
+  # =========================================================================
   compile:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -22,30 +24,30 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            platform-dir: windows
+            platform-key: windows
           - os: ubuntu-latest
-            platform-dir: linux
+            platform-key: linux
           - os: macos-latest
-            platform-dir: macos
+            platform-key: macos
 
     steps:
-    - name: Checkout Code
+    - name: Checkout Code Base
       uses: actions/checkout@v5
 
-    # --- ENVIRONMENT SETUP ---
-    - name: Set up Environment (Ubuntu)
+    # --- NATIVE OPERATING SYSTEM SUB-ENVIRONMENT RESOLUTION ---
+    - name: Set up Native Dependencies (Ubuntu Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential cmake libgl1-mesa-dev libssl-dev qt6-base-dev
 
-    - name: Set up Environment (macOS)
+    - name: Set up Native Dependencies (macOS ARM64)
       if: matrix.os == 'macos-latest'
       run: |
         brew update
         brew install cmake qt6 openssl@3
 
-    - name: Set up Environment (Windows)
+    - name: Set up Native Dependencies (Windows MSYS2 Engine)
       if: matrix.os == 'windows-latest'
       uses: msys2/setup-msys2@v2
       with:
@@ -57,126 +59,131 @@ jobs:
           mingw-w64-x86_64-qt6-base
           mingw-w64-x86_64-openssl
 
-    # --- COMPILATION STAGE ---
-    - name: Configure and Build (Linux)
+    # --- CRYPTOGRAPHIC C++ CODE COMPILATION ARCS ---
+    - name: Build Payload Binary (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
         cmake -B build -DCMAKE_BUILD_TYPE=Release
         cmake --build build --config Release
 
-    - name: Configure and Build (macOS ARM64)
+    - name: Build Payload Binary (macOS Apple Silicon)
       if: matrix.os == 'macos-latest'
       run: |
         cmake -B build -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_PREFIX_PATH="/opt/homebrew/opt/qt6;/opt/homebrew/opt/openssl@3"
         cmake --build build --config Release
 
-    - name: Configure and Build (Windows MSYS2)
+    - name: Build Payload Binary (Windows MSYS2 Toolchain)
       if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: |
         cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
         cmake --build build --config Release
 
-    # --- POST-BUILD STRUCTURING & INTERMEDIATE ARTIFACT UPLOAD ---
-    - name: Prepare Local Workspace Staging Layout
-      run: mkdir -p staging-area
+    # --- LOCALIZED ISOLATED TARGET PACKAGING STAGES ---
+    - name: Initialize Transitory Output Sandbox
+      run: mkdir -p runtime-staging
 
-    - name: Bundle Windows Assets
+    - name: Assemble Distribution Package (Windows)
       if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: |
-        windeployqt build/pdf-integrity-friend.exe --dir staging-area/
-        cp build/pdf-integrity-friend.exe staging-area/
-        cp /mingw64/bin/libcrypto-3-x64.dll staging-area/
-        cp /mingw64/bin/libssl-3-x64.dll staging-area/
-        cp /mingw64/bin/libwinpthread-1.dll staging-area/
-        cp /mingw64/bin/libstdc++-6.dll staging-area/
-        cp /mingw64/bin/libgcc_s_seh-1.dll staging-area/
-        cp tsa_config.json staging-area/
+        windeployqt build/pdf-integrity-friend.exe --dir runtime-staging/
+        cp build/pdf-integrity-friend.exe runtime-staging/
+        cp /mingw64/bin/libcrypto-3-x64.dll runtime-staging/
+        cp /mingw64/bin/libssl-3-x64.dll runtime-staging/
+        cp /mingw64/bin/libwinpthread-1.dll runtime-staging/
+        cp /mingw64/bin/libstdc++-6.dll runtime-staging/
+        cp /mingw64/bin/libgcc_s_seh-1.dll runtime-staging/
+        cp tsa_config.json runtime-staging/
 
-    - name: Bundle macOS App Bundle
+    - name: Assemble Distribution Package (macOS)
       if: matrix.os == 'macos-latest'
       run: |
         /opt/homebrew/opt/qt6/bin/macdeployqt build/pdf-integrity-friend.app -always-overwrite
         cp tsa_config.json build/pdf-integrity-friend.app/Contents/Resources/ || true
-        zip -r staging-area/pdf-integrity-friend-mac.zip build/pdf-integrity-friend.app
+        zip -r runtime-staging/pdf-integrity-friend-mac.zip build/pdf-integrity-friend.app
 
-    - name: Bundle Linux Binary
+    - name: Assemble Distribution Package (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        cp build/pdf-integrity-friend staging-area/
-        cp tsa_config.json staging-area/
+        cp build/pdf-integrity-friend runtime-staging/
+        cp tsa_config.json runtime-staging/
 
-    # CRITICAL FIX: Upload the directory content cleanly without nesting platform names
-    - name: Upload Intermediate Build Assets
+    - name: Transit Packages onto Intermediate Storage Layers
       uses: actions/upload-artifact@v5
       with:
-        name: asset-${{ matrix.platform-dir }}
-        path: staging-area/
+        name: compilation-bundle-${{ matrix.platform-key }}
+        path: runtime-staging/
+        retention-days: 1
 
-  # STAGE 2: Securely aggregate all files and push directly to git using native commands
+  # =========================================================================
+  # STAGE 2: Monolithic Synchronization & Repository Injection Node
+  # =========================================================================
   deploy-to-repo:
     name: Consolidate and Push Assets
     needs: compile
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Code
+    - name: Checkout Code Base securely
       uses: actions/checkout@v5
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0 # Retain full commit trees to perform native Git merges cleanly
 
-    # Create an isolated temporary landing folder completely separate from your root files
-    - name: Create Temporary Isolation Landing Folder
+    # Create an isolated temporary folder outside the source workspace entirely
+    - name: Enforce Directory Isolation Bounds
       run: |
-        mkdir -p temp-downloads/windows
-        mkdir -p temp-downloads/linux
-        mkdir -p temp-downloads/macos
+        mkdir -p temporary-vault/windows
+        mkdir -p temporary-vault/linux
+        mkdir -p temporary-vault/macos
         mkdir -p build/windows
         mkdir -p build/linux
         mkdir -p build/macos
 
-    # Download each asset group into its matching temporary subfolder target
-    - name: Download Windows Target Binary Component
+    # Download compiled chunks securely into the external isolation directory
+    - name: Pull Windows Target Build Chunks
       uses: actions/download-artifact@v5
       with:
-        name: asset-windows
-        path: temp-downloads/windows
+        name: compilation-bundle-windows
+        path: temporary-vault/windows
 
-    - name: Download Linux Target Binary Component
+    - name: Pull Linux Target Build Chunks
       uses: actions/download-artifact@v5
       with:
-        name: asset-linux
-        path: temp-downloads/linux
+        name: compilation-bundle-linux
+        path: temporary-vault/linux
 
-    - name: Download macOS Target Binary Component
+    - name: Pull macOS Target Build Chunks
       uses: actions/download-artifact@v5
       with:
-        name: asset-macos
-        path: temp-downloads/macos
+        name: compilation-bundle-macos
+        path: temporary-vault/macos
 
-    # Carefully transfer only the target binary assets into your final /build branch folder
-    - name: Safely Populate Build Target Folders
+    # Safely populating /build directory tree layout structures without source file overwrites
+    - name: Secure Build Matrix Transfer Linkage
       run: |
-        cp -r temp-downloads/windows/* build/windows/
-        cp -r temp-downloads/linux/* build/linux/
-        cp -r temp-downloads/macos/* build/macos/
-        rm -rf temp-downloads
+        cp -r temporary-vault/windows/* build/windows/
+        cp -r temporary-vault/linux/* build/linux/
+        cp -r temporary-vault/macos/* build/macos/
+        rm -rf temporary-vault
 
-    - name: Native In-Place Repository Commit
+    # Native Git commands run smoothly on Linux without worktree locks or missing command tools
+    - name: Publish Production Target Assets to Repository
       run: |
         git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@://github.com"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
         
-        # Pull down modifications cleanly to ensure working trees stay perfectly aligned
+        # 1. Fetch latest state and resolve remote changes safely before adding files
         git pull origin ${{ github.ref_name }} --rebase
         
-        # Explicitly stage ONLY the /build folder, protecting your root source code files
+        # 2. Stage ONLY the absolute /build folder track line, ensuring zero source disruption
         git add build/
         
+        # 3. Deterministic diff-checking execution
         if git diff-index --quiet HEAD --; then
-          echo "No executable binary modifications discovered. Skipping commit pipeline."
+          echo "Zero file changes verified inside binary tracking arrays. Terminating pipeline execution."
         else
-          git commit -m "Automated workspace binary distribution update [Skip CI]"
+          git commit -m "chore(distribution): update binary assets for ${{ github.ref_name }} [Skip CI]"
           git push origin HEAD:${{ github.ref_name }}
         fi
