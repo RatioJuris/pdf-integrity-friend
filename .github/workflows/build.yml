@@ -28,7 +28,7 @@ jobs:
             platform-dir: macos
 
     steps:
-    # --- CHECKOUT CONFIGURATION (UPDATED TO V5 FOR NODE 24) ---
+    # --- CHECKOUT CONFIGURATION (USES V5 FOR NATIVE NODE 24) ---
     - name: Checkout Code
       uses: actions/checkout@v5
 
@@ -108,10 +108,10 @@ jobs:
         cp build/pdf-integrity-friend staging-area/build/linux/
         cp tsa_config.json staging-area/build/linux/
 
-    # --- IN-PLACE DEPLOYMENT PIPELINE (UPDATED TO V5 FOR NODE 24) ---
+    # --- IN-PLACE DEPLOYMENT PIPELINE (FIXED TAG TO VERIFIED V4 RELEASE) ---
     - name: Commit Compiled Assets directly to Active Build Folder
-      uses: JamesIves/github-pages-deploy-action@v5
+      uses: JamesIves/github-pages-deploy-action@v4
       with:
         folder: staging-area
-        branch: ${{ github.ref_name }} # Dynamically updates your current active branch
-        target-folder: .               # Retains the root /build path inside your repository
+        branch: ${{ github.ref_name }} # Dynamically targets main or master branch
+        target-folder: .               # Places the /build directory directly into root
