@@ -7,6 +7,13 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+# --- EXPLICIT SECURITY PERMISSIONS ---
+# Essential for creating tags, updating releases, and publishing artifacts
+permissions:
+  contents: write
+  packages: read
+  actions: write
+
 jobs:
   build:
     name: Build on ${{ matrix.os }}
@@ -55,10 +62,18 @@ jobs:
           mingw-w64-x86_64-openssl
 
     # --- COMPILATION STAGE ---
-    - name: Configure and Build (Linux/macOS)
-      if: matrix.os != 'windows-latest'
+    - name: Configure and Build (Linux)
+      if: matrix.os == 'ubuntu-latest'
       run: |
         cmake -B build -DCMAKE_BUILD_TYPE=Release
+        cmake --build build --config Release
+
+    - name: Configure and Build (macOS ARM64)
+      if: matrix.os == 'macos-latest'
+      run: |
+        # Point CMake explicitly to Apple Silicon Homebrew directory nodes
+        cmake -B build -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_PREFIX_PATH="/opt/homebrew/opt/qt6;/opt/homebrew/opt/openssl@3"
         cmake --build build --config Release
 
     - name: Configure and Build (Windows MSYS2)
@@ -87,8 +102,8 @@ jobs:
     - name: Bundle macOS App Packet
       if: matrix.os == 'macos-latest'
       run: |
-        # Use Mac deployment tool to bundle frameworks inside the app package
-        macdeployqt build/pdf-integrity-friend.app -always-overwrite
+        # Use explicit Homebrew path for macdeployqt tool execution
+        /opt/homebrew/opt/qt6/bin/macdeployqt build/pdf-integrity-friend.app -always-overwrite
         cp tsa_config.json build/pdf-integrity-friend.app/Contents/Resources/ || true
 
     - name: Bundle Linux Artifacts
@@ -99,23 +114,24 @@ jobs:
         cp tsa_config.json build/linux-dist/
 
     # --- UPLOAD PRODUCTION ARTIFACTS ---
+    # Fixed typo from actions/artifacts to official actions/upload-artifact@v4
     - name: Upload Windows Output Bundle
       if: matrix.os == 'windows-latest'
-      uses: actions/artifacts@v4
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact-name }}
         path: build/Release/*
 
     - name: Upload Linux Output Bundle
       if: matrix.os == 'ubuntu-latest'
-      uses: actions/artifacts@v4
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact-name }}
         path: build/linux-dist/*
 
     - name: Upload macOS Output Bundle
       if: matrix.os == 'macos-latest'
-      uses: actions/artifacts@v4
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact-name }}
         path: build/pdf-integrity-friend.app
