@@ -7,8 +7,6 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
-# --- EXPLICIT SECURITY PERMISSIONS ---
-# Essential for creating tags, updating releases, and publishing artifacts
 permissions:
   contents: write
   packages: read
@@ -24,13 +22,13 @@ jobs:
         include:
           - os: windows-latest
             artifact-name: pdf-integrity-friend-windows
-            output-binary: build/Release/pdf-integrity-friend.exe
+            output-path: build/Release/*
           - os: ubuntu-latest
             artifact-name: pdf-integrity-friend-linux
-            output-binary: build/pdf-integrity-friend
+            output-path: build/linux-dist/*
           - os: macos-latest
             artifact-name: pdf-integrity-friend-mac
-            output-binary: build/pdf-integrity-friend.app
+            output-path: build/pdf-integrity-friend.app
 
     steps:
     - name: Checkout Code
@@ -71,7 +69,7 @@ jobs:
     - name: Configure and Build (macOS ARM64)
       if: matrix.os == 'macos-latest'
       run: |
-        # Point CMake explicitly to Apple Silicon Homebrew directory nodes
+        # Force build type to Release so output lives directly inside the build directory root
         cmake -B build -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_PREFIX_PATH="/opt/homebrew/opt/qt6;/opt/homebrew/opt/openssl@3"
         cmake --build build --config Release
@@ -88,21 +86,18 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: |
-        # Use Qt deployment tool to copy needed DLLs automatically
         windeployqt build/pdf-integrity-friend.exe --dir build/Release/
-        # Manually verify and copy vital MSYS runtime dependencies
         cp /mingw64/bin/libcrypto-3-x64.dll build/Release/
         cp /mingw64/bin/libssl-3-x64.dll build/Release/
         cp /mingw64/bin/libwinpthread-1.dll build/Release/
         cp /mingw64/bin/libstdc++-6.dll build/Release/
         cp /mingw64/bin/libgcc_s_seh-1.dll build/Release/
-        # Include default JSON layout package
         cp tsa_config.json build/Release/
 
     - name: Bundle macOS App Packet
       if: matrix.os == 'macos-latest'
       run: |
-        # Use explicit Homebrew path for macdeployqt tool execution
+        # macdeployqt will now discover the generated application bundle container successfully
         /opt/homebrew/opt/qt6/bin/macdeployqt build/pdf-integrity-friend.app -always-overwrite
         cp tsa_config.json build/pdf-integrity-friend.app/Contents/Resources/ || true
 
@@ -114,24 +109,23 @@ jobs:
         cp tsa_config.json build/linux-dist/
 
     # --- UPLOAD PRODUCTION ARTIFACTS ---
-    # Fixed typo from actions/artifacts to official actions/upload-artifact@v4
     - name: Upload Windows Output Bundle
       if: matrix.os == 'windows-latest'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact-name }}
-        path: build/Release/*
+        path: ${{ matrix.output-path }}
 
     - name: Upload Linux Output Bundle
       if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact-name }}
-        path: build/linux-dist/*
+        path: ${{ matrix.output-path }}
 
     - name: Upload macOS Output Bundle
       if: matrix.os == 'macos-latest'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact-name }}
-        path: build/pdf-integrity-friend.app
+        path: ${{ matrix.output-path }}
