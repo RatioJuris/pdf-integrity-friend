@@ -1,0 +1,121 @@
+name: Cross-Platform Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact-name: pdf-integrity-friend-windows
+            output-binary: build/Release/pdf-integrity-friend.exe
+          - os: ubuntu-latest
+            artifact-name: pdf-integrity-friend-linux
+            output-binary: build/pdf-integrity-friend
+          - os: macos-latest
+            artifact-name: pdf-integrity-friend-mac
+            output-binary: build/pdf-integrity-friend.app
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # --- ENVIRONMENT SETUP ---
+    - name: Set up Environment (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake libgl1-mesa-dev libssl-dev qt6-base-dev
+
+    - name: Set up Environment (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew update
+        brew install cmake qt6 openssl@3
+
+    - name: Set up Environment (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >-
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-toolchain
+          mingw-w64-x86_64-qt6-base
+          mingw-w64-x86_64-openssl
+
+    # --- COMPILATION STAGE ---
+    - name: Configure and Build (Linux/macOS)
+      if: matrix.os != 'windows-latest'
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=Release
+        cmake --build build --config Release
+
+    - name: Configure and Build (Windows MSYS2)
+      if: matrix.os == 'windows-latest'
+      shell: msys2 {0}
+      run: |
+        cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+        cmake --build build --config Release
+
+    # --- POST-BUILD DEPLOYMENT STEPS ---
+    - name: Bundle Windows Dependencies
+      if: matrix.os == 'windows-latest'
+      shell: msys2 {0}
+      run: |
+        # Use Qt deployment tool to copy needed DLLs automatically
+        windeployqt build/pdf-integrity-friend.exe --dir build/Release/
+        # Manually verify and copy vital MSYS runtime dependencies
+        cp /mingw64/bin/libcrypto-3-x64.dll build/Release/
+        cp /mingw64/bin/libssl-3-x64.dll build/Release/
+        cp /mingw64/bin/libwinpthread-1.dll build/Release/
+        cp /mingw64/bin/libstdc++-6.dll build/Release/
+        cp /mingw64/bin/libgcc_s_seh-1.dll build/Release/
+        # Include default JSON layout package
+        cp tsa_config.json build/Release/
+
+    - name: Bundle macOS App Packet
+      if: matrix.os == 'macos-latest'
+      run: |
+        # Use Mac deployment tool to bundle frameworks inside the app package
+        macdeployqt build/pdf-integrity-friend.app -always-overwrite
+        cp tsa_config.json build/pdf-integrity-friend.app/Contents/Resources/ || true
+
+    - name: Bundle Linux Artifacts
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        mkdir -p build/linux-dist
+        cp build/pdf-integrity-friend build/linux-dist/
+        cp tsa_config.json build/linux-dist/
+
+    # --- UPLOAD PRODUCTION ARTIFACTS ---
+    - name: Upload Windows Output Bundle
+      if: matrix.os == 'windows-latest'
+      uses: actions/artifacts@v4
+      with:
+        name: ${{ matrix.artifact-name }}
+        path: build/Release/*
+
+    - name: Upload Linux Output Bundle
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/artifacts@v4
+      with:
+        name: ${{ matrix.artifact-name }}
+        path: build/linux-dist/*
+
+    - name: Upload macOS Output Bundle
+      if: matrix.os == 'macos-latest'
+      uses: actions/artifacts@v4
+      with:
+        name: ${{ matrix.artifact-name }}
+        path: build/pdf-integrity-friend.app
