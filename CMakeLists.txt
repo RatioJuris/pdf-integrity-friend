@@ -8,6 +8,9 @@ project(pdf-integrity-friend
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# CRITICAL FIX: Enable automatic processing of Qt Meta-Object Compiler (MOC)
+set(CMAKE_AUTOMOC ON)
+
 # Define author macro to use inside the GUI code
 add_compile_definitions(PROJECT_AUTHOR="RatioJuris")
 
