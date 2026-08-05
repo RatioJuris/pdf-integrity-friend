@@ -8,7 +8,7 @@ project(pdf-integrity-friend
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# CRITICAL FIX: Enable automatic processing of Qt Meta-Object Compiler (MOC)
+# Enable automatic processing of Qt Meta-Object Compiler (MOC)
 set(CMAKE_AUTOMOC ON)
 
 # Define author macro to use inside the GUI code
@@ -17,7 +17,8 @@ add_compile_definitions(PROJECT_AUTHOR="RatioJuris")
 find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
 find_package(OpenSSL REQUIRED)
 
-add_executable(pdf-integrity-friend
+# CRITICAL FIX: Added MACOSX_BUNDLE to generate a standard .app layout on Mac platforms
+add_executable(pdf-integrity-friend MACOSX_BUNDLE
     main.cpp
     mainwindow.h
     mainwindow.cpp
