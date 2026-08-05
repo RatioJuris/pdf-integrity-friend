@@ -1,0 +1,14 @@
+{
+    "providers": [
+        {
+            "auth_required": false,
+            "name": "DigiCert TSA",
+            "url": "http://digicert.com"
+        },
+        {
+            "auth_required": false,
+            "name": "Sectigo TSA",
+            "url": "http://comodoca.com"
+        }
+    ]
+}
