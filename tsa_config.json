@@ -1,0 +1,39 @@
+{
+    "providers": [
+        {
+            "auth_required": false,
+            "name": "DigiCert TSA",
+            "url": "http://timestamp.digicert.com"
+        },
+        {
+            "auth_required": false,
+            "name": "Sectigo TSA",
+            "url": "http://timestamp.sectigo.com"
+        },
+        {
+            "auth_required": false,
+            "name": "GlobalSign TSA (Advanced)",
+            "url": "http://timestamp.globalsign.com/tsa/r6advanced1"
+        },
+        {
+            "auth_required": false,
+            "name": "Apple Time Stamping",
+            "url": "http://timestamp.apple.com/ts01"
+        },
+        {
+            "auth_required": false,
+            "name": "Entrust TSA (RFC3161 SHA2)",
+            "url": "http://timestamp.entrust.net/TSS/RFC3161sha2TS"
+        },
+        {
+            "auth_required": false,
+            "name": "Certum (Asseco Data Systems)",
+            "url": "http://time.certum.pl"
+        },
+        {
+            "auth_required": false,
+            "name": "DFN-PKI Zeitstempel (Germany)",
+            "url": "http://zeitstempel.dfn.de"
+        }
+    ]
+}
