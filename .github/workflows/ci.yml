@@ -1,0 +1,65 @@
+name: Continuous Integration (Build Check)
+
+on:
+  push:
+    branches: [ main, master ]
+    paths-ignore:
+      - 'build/**'
+      - 'README.md'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  validate-build:
+    name: Validate Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+    - name: Checkout Code Base
+      uses: actions/checkout@v5
+
+    # --- ENVIRONMENT RESOLUTION ---
+    - name: Set up Native Dependencies (Ubuntu Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake libgl1-mesa-dev libssl-dev qt6-base-dev
+
+    - name: Set up Native Dependencies (macOS ARM64)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew update
+        brew install cmake qt6 openssl@3
+
+    - name: Set up Native Dependencies (Windows MSYS2 Engine)
+      if: matrix.os == 'windows-latest'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: mingw-w64-x86_64-cmake mingw-w64-x86_64-toolchain mingw-w64-x86_64-qt6-base mingw-w64-x86_64-openssl
+
+    # --- CRYPTOGRAPHIC C++ CODE COMPILATION CHECKS ---
+    - name: Build Check (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=Release
+        cmake --build build --config Release
+
+    - name: Build Check (macOS Apple Silicon)
+      if: matrix.os == 'macos-latest'
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="/opt/homebrew/opt/qt6;/opt/homebrew/opt/openssl@3"
+        cmake --build build --config Release
+
+    - name: Build Check (Windows MSYS2 Toolchain)
+      if: matrix.os == 'windows-latest'
+      shell: msys2 {0}
+      run: |
+        cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+        cmake --build build --config Release
