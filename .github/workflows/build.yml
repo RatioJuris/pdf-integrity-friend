@@ -80,39 +80,40 @@ jobs:
 
     # --- POST-BUILD STRUCTURING & INTERMEDIATE ARTIFACT UPLOAD ---
     - name: Prepare Local Workspace Staging Layout
-      run: mkdir -p staging/${{ matrix.platform-dir }}
+      run: mkdir -p staging-area
 
     - name: Bundle Windows Assets
       if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: |
-        windeployqt build/pdf-integrity-friend.exe --dir staging/windows/
-        cp build/pdf-integrity-friend.exe staging/windows/
-        cp /mingw64/bin/libcrypto-3-x64.dll staging/windows/
-        cp /mingw64/bin/libssl-3-x64.dll staging/windows/
-        cp /mingw64/bin/libwinpthread-1.dll staging/windows/
-        cp /mingw64/bin/libstdc++-6.dll staging/windows/
-        cp /mingw64/bin/libgcc_s_seh-1.dll staging/windows/
-        cp tsa_config.json staging/windows/
+        windeployqt build/pdf-integrity-friend.exe --dir staging-area/
+        cp build/pdf-integrity-friend.exe staging-area/
+        cp /mingw64/bin/libcrypto-3-x64.dll staging-area/
+        cp /mingw64/bin/libssl-3-x64.dll staging-area/
+        cp /mingw64/bin/libwinpthread-1.dll staging-area/
+        cp /mingw64/bin/libstdc++-6.dll staging-area/
+        cp /mingw64/bin/libgcc_s_seh-1.dll staging-area/
+        cp tsa_config.json staging-area/
 
     - name: Bundle macOS App Bundle
       if: matrix.os == 'macos-latest'
       run: |
         /opt/homebrew/opt/qt6/bin/macdeployqt build/pdf-integrity-friend.app -always-overwrite
         cp tsa_config.json build/pdf-integrity-friend.app/Contents/Resources/ || true
-        zip -r staging/macos/pdf-integrity-friend-mac.zip build/pdf-integrity-friend.app
+        zip -r staging-area/pdf-integrity-friend-mac.zip build/pdf-integrity-friend.app
 
     - name: Bundle Linux Binary
       if: matrix.os == 'ubuntu-latest'
       run: |
-        cp build/pdf-integrity-friend staging/linux/
-        cp tsa_config.json staging/linux/
+        cp build/pdf-integrity-friend staging-area/
+        cp tsa_config.json staging-area/
 
+    # CRITICAL FIX: Upload the directory content cleanly without nesting platform names
     - name: Upload Intermediate Build Assets
       uses: actions/upload-artifact@v5
       with:
         name: asset-${{ matrix.platform-dir }}
-        path: staging/
+        path: staging-area/
 
   # STAGE 2: Securely aggregate all files and push directly to git using native commands
   deploy-to-repo:
@@ -125,42 +126,57 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Create Base Target Directory
-      run: mkdir -p build
+    # Create an isolated temporary landing folder completely separate from your root files
+    - name: Create Temporary Isolation Landing Folder
+      run: |
+        mkdir -p temp-downloads/windows
+        mkdir -p temp-downloads/linux
+        mkdir -p temp-downloads/macos
+        mkdir -p build/windows
+        mkdir -p build/linux
+        mkdir -p build/macos
 
+    # Download each asset group into its matching temporary subfolder target
     - name: Download Windows Target Binary Component
       uses: actions/download-artifact@v5
       with:
         name: asset-windows
-        path: build/
+        path: temp-downloads/windows
 
     - name: Download Linux Target Binary Component
       uses: actions/download-artifact@v5
       with:
         name: asset-linux
-        path: build/
+        path: temp-downloads/linux
 
     - name: Download macOS Target Binary Component
       uses: actions/download-artifact@v5
       with:
         name: asset-macos
-        path: build/
+        path: temp-downloads/macos
+
+    # Carefully transfer only the target binary assets into your final /build branch folder
+    - name: Safely Populate Build Target Folders
+      run: |
+        cp -r temp-downloads/windows/* build/windows/
+        cp -r temp-downloads/linux/* build/linux/
+        cp -r temp-downloads/macos/* build/macos/
+        rm -rf temp-downloads
 
     - name: Native In-Place Repository Commit
       run: |
         git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.email "github-actions[bot]@://github.com"
         
-        # Pull latest changes to avoid out-of-sync states
+        # Pull down modifications cleanly to ensure working trees stay perfectly aligned
         git pull origin ${{ github.ref_name }} --rebase
         
-        # Stage the /build folder directly
+        # Explicitly stage ONLY the /build folder, protecting your root source code files
         git add build/
         
-        # Check if changes exist before trying to create a commit block
         if git diff-index --quiet HEAD --; then
-          echo "No new executable binary alterations discovered. Skipping commit pipeline."
+          echo "No executable binary modifications discovered. Skipping commit pipeline."
         else
-          git commit -m "Automated native workspace binary distribution update [Skip CI]"
+          git commit -m "Automated workspace binary distribution update [Skip CI]"
           git push origin HEAD:${{ github.ref_name }}
         fi
