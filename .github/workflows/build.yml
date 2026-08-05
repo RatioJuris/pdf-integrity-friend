@@ -21,18 +21,16 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            artifact-name: pdf-integrity-friend-windows
-            output-path: build/Release/*
+            platform-dir: windows
           - os: ubuntu-latest
-            artifact-name: pdf-integrity-friend-linux
-            output-path: build/linux-dist/*
+            platform-dir: linux
           - os: macos-latest
-            artifact-name: pdf-integrity-friend-mac
-            output-path: build/pdf-integrity-friend.app
+            platform-dir: macos
 
     steps:
+    # --- CHECKOUT CONFIGURATION (UPDATED TO V5 FOR NODE 24) ---
     - name: Checkout Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     # --- ENVIRONMENT SETUP ---
     - name: Set up Environment (Ubuntu)
@@ -69,7 +67,6 @@ jobs:
     - name: Configure and Build (macOS ARM64)
       if: matrix.os == 'macos-latest'
       run: |
-        # Force build type to Release so output lives directly inside the build directory root
         cmake -B build -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_PREFIX_PATH="/opt/homebrew/opt/qt6;/opt/homebrew/opt/openssl@3"
         cmake --build build --config Release
@@ -82,50 +79,39 @@ jobs:
         cmake --build build --config Release
 
     # --- POST-BUILD DEPLOYMENT STEPS ---
-    - name: Bundle Windows Dependencies
+    - name: Prepare Workspace Directory Layout
+      run: mkdir -p staging-area/build/${{ matrix.platform-dir }}
+
+    - name: Bundle Windows Assets
       if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: |
-        windeployqt build/pdf-integrity-friend.exe --dir build/Release/
-        cp /mingw64/bin/libcrypto-3-x64.dll build/Release/
-        cp /mingw64/bin/libssl-3-x64.dll build/Release/
-        cp /mingw64/bin/libwinpthread-1.dll build/Release/
-        cp /mingw64/bin/libstdc++-6.dll build/Release/
-        cp /mingw64/bin/libgcc_s_seh-1.dll build/Release/
-        cp tsa_config.json build/Release/
+        windeployqt build/pdf-integrity-friend.exe --dir staging-area/build/windows/
+        cp build/pdf-integrity-friend.exe staging-area/build/windows/
+        cp /mingw64/bin/libcrypto-3-x64.dll staging-area/build/windows/
+        cp /mingw64/bin/libssl-3-x64.dll staging-area/build/windows/
+        cp /mingw64/bin/libwinpthread-1.dll staging-area/build/windows/
+        cp /mingw64/bin/libstdc++-6.dll staging-area/build/windows/
+        cp /mingw64/bin/libgcc_s_seh-1.dll staging-area/build/windows/
+        cp tsa_config.json staging-area/build/windows/
 
-    - name: Bundle macOS App Packet
+    - name: Bundle macOS App Bundle
       if: matrix.os == 'macos-latest'
       run: |
-        # macdeployqt will now discover the generated application bundle container successfully
         /opt/homebrew/opt/qt6/bin/macdeployqt build/pdf-integrity-friend.app -always-overwrite
         cp tsa_config.json build/pdf-integrity-friend.app/Contents/Resources/ || true
+        zip -r staging-area/build/macos/pdf-integrity-friend-mac.zip build/pdf-integrity-friend.app
 
-    - name: Bundle Linux Artifacts
+    - name: Bundle Linux Binary
       if: matrix.os == 'ubuntu-latest'
       run: |
-        mkdir -p build/linux-dist
-        cp build/pdf-integrity-friend build/linux-dist/
-        cp tsa_config.json build/linux-dist/
+        cp build/pdf-integrity-friend staging-area/build/linux/
+        cp tsa_config.json staging-area/build/linux/
 
-    # --- UPLOAD PRODUCTION ARTIFACTS ---
-    - name: Upload Windows Output Bundle
-      if: matrix.os == 'windows-latest'
-      uses: actions/upload-artifact@v4
+    # --- IN-PLACE DEPLOYMENT PIPELINE (UPDATED TO V5 FOR NODE 24) ---
+    - name: Commit Compiled Assets directly to Active Build Folder
+      uses: JamesIves/github-pages-deploy-action@v5
       with:
-        name: ${{ matrix.artifact-name }}
-        path: ${{ matrix.output-path }}
-
-    - name: Upload Linux Output Bundle
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ matrix.artifact-name }}
-        path: ${{ matrix.output-path }}
-
-    - name: Upload macOS Output Bundle
-      if: matrix.os == 'macos-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ matrix.artifact-name }}
-        path: ${{ matrix.output-path }}
+        folder: staging-area
+        branch: ${{ github.ref_name }} # Dynamically updates your current active branch
+        target-folder: .               # Retains the root /build path inside your repository
