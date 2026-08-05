@@ -26,7 +26,7 @@ private slots:
 
 private:
     void initUI();
-    void createDefaultJson();
+    void createEmptyTemplateJson();
     bool validateJsonStructure(const QJsonObject& json);
 
     // UI Elements
@@ -36,7 +36,7 @@ private:
     QPushButton* signBtn;
     QLabel* statusLabel;
 
-    // Network & Config
+    // Network & Config Management
     QNetworkAccessManager* networkManager;
     QString configFilePath;
     QJsonObject currentTSAData;
