@@ -13,7 +13,8 @@ permissions:
   actions: write
 
 jobs:
-  build:
+  # STAGE 1: Compile all binaries independently across individual nodes
+  compile:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -28,7 +29,6 @@ jobs:
             platform-dir: macos
 
     steps:
-    # --- CHECKOUT CONFIGURATION (USES V5 FOR NATIVE NODE 24) ---
     - name: Checkout Code
       uses: actions/checkout@v5
 
@@ -78,40 +78,89 @@ jobs:
         cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
         cmake --build build --config Release
 
-    # --- POST-BUILD DEPLOYMENT STEPS ---
-    - name: Prepare Workspace Directory Layout
-      run: mkdir -p staging-area/build/${{ matrix.platform-dir }}
+    # --- POST-BUILD STRUCTURING & INTERMEDIATE ARTIFACT UPLOAD ---
+    - name: Prepare Local Workspace Staging Layout
+      run: mkdir -p staging/${{ matrix.platform-dir }}
 
     - name: Bundle Windows Assets
       if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: |
-        windeployqt build/pdf-integrity-friend.exe --dir staging-area/build/windows/
-        cp build/pdf-integrity-friend.exe staging-area/build/windows/
-        cp /mingw64/bin/libcrypto-3-x64.dll staging-area/build/windows/
-        cp /mingw64/bin/libssl-3-x64.dll staging-area/build/windows/
-        cp /mingw64/bin/libwinpthread-1.dll staging-area/build/windows/
-        cp /mingw64/bin/libstdc++-6.dll staging-area/build/windows/
-        cp /mingw64/bin/libgcc_s_seh-1.dll staging-area/build/windows/
-        cp tsa_config.json staging-area/build/windows/
+        windeployqt build/pdf-integrity-friend.exe --dir staging/windows/
+        cp build/pdf-integrity-friend.exe staging/windows/
+        cp /mingw64/bin/libcrypto-3-x64.dll staging/windows/
+        cp /mingw64/bin/libssl-3-x64.dll staging/windows/
+        cp /mingw64/bin/libwinpthread-1.dll staging/windows/
+        cp /mingw64/bin/libstdc++-6.dll staging/windows/
+        cp /mingw64/bin/libgcc_s_seh-1.dll staging/windows/
+        cp tsa_config.json staging/windows/
 
     - name: Bundle macOS App Bundle
       if: matrix.os == 'macos-latest'
       run: |
         /opt/homebrew/opt/qt6/bin/macdeployqt build/pdf-integrity-friend.app -always-overwrite
         cp tsa_config.json build/pdf-integrity-friend.app/Contents/Resources/ || true
-        zip -r staging-area/build/macos/pdf-integrity-friend-mac.zip build/pdf-integrity-friend.app
+        zip -r staging/macos/pdf-integrity-friend-mac.zip build/pdf-integrity-friend.app
 
     - name: Bundle Linux Binary
       if: matrix.os == 'ubuntu-latest'
       run: |
-        cp build/pdf-integrity-friend staging-area/build/linux/
-        cp tsa_config.json staging-area/build/linux/
+        cp build/pdf-integrity-friend staging/linux/
+        cp tsa_config.json staging/linux/
 
-    # --- IN-PLACE DEPLOYMENT PIPELINE (FIXED TAG TO VERIFIED V4 RELEASE) ---
-    - name: Commit Compiled Assets directly to Active Build Folder
-      uses: JamesIves/github-pages-deploy-action@v4
+    - name: Upload Intermediate Build Assets
+      uses: actions/upload-artifact@v5
       with:
-        folder: staging-area
-        branch: ${{ github.ref_name }} # Dynamically targets main or master branch
-        target-folder: .               # Places the /build directory directly into root
+        name: asset-${{ matrix.platform-dir }}
+        path: staging/
+
+  # STAGE 2: Securely aggregate all files and push directly to git using native commands
+  deploy-to-repo:
+    name: Consolidate and Push Assets
+    needs: compile
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Base Target Directory
+      run: mkdir -p build
+
+    - name: Download Windows Target Binary Component
+      uses: actions/download-artifact@v5
+      with:
+        name: asset-windows
+        path: build/
+
+    - name: Download Linux Target Binary Component
+      uses: actions/download-artifact@v5
+      with:
+        name: asset-linux
+        path: build/
+
+    - name: Download macOS Target Binary Component
+      uses: actions/download-artifact@v5
+      with:
+        name: asset-macos
+        path: build/
+
+    - name: Native In-Place Repository Commit
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # Pull latest changes to avoid out-of-sync states
+        git pull origin ${{ github.ref_name }} --rebase
+        
+        # Stage the /build folder directly
+        git add build/
+        
+        # Check if changes exist before trying to create a commit block
+        if git diff-index --quiet HEAD --; then
+          echo "No new executable binary alterations discovered. Skipping commit pipeline."
+        else
+          git commit -m "Automated native workspace binary distribution update [Skip CI]"
+          git push origin HEAD:${{ github.ref_name }}
+        fi
