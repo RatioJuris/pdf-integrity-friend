@@ -3,14 +3,18 @@ from pathlib import Path
 from PIL import Image
 import cairosvg
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT_DIR = Path(__file__).resolve().parent.parent
 
-SVG_FILE = ROOT / "res" / "app-icon.svg"
-OUTPUT_DIR = ROOT / "res" / "generated"
+SVG_ICON = ROOT_DIR / "res" / "app-icon.svg"
 
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR = ROOT_DIR / "res" / "generated"
 
-sizes = [
+OUTPUT_DIR.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+ICON_SIZES = [
     16,
     24,
     32,
@@ -21,38 +25,62 @@ sizes = [
     512
 ]
 
-png_files = []
+generated_pngs = []
 
-for size in sizes:
-    png_path = OUTPUT_DIR / f"app-icon-{size}.png"
+print("Generating PNG files...")
+
+for size in ICON_SIZES:
+
+    output_file = (
+        OUTPUT_DIR /
+        f"app-icon-{size}.png"
+    )
 
     cairosvg.svg2png(
-        url=str(SVG_FILE),
-        write_to=str(png_path),
+        url=str(SVG_ICON),
+        write_to=str(output_file),
         output_width=size,
         output_height=size
     )
 
-    png_files.append(png_path)
+    generated_pngs.append(output_file)
 
-print("PNG icon generation completed.")
-
-ico_sizes = []
-
-for size in sizes:
-    img = Image.open(
-        OUTPUT_DIR / f"app-icon-{size}.png"
+    print(
+        f"Generated {output_file.name}"
     )
 
-    ico_sizes.append(img)
+print("PNG generation completed.")
 
-ico_path = OUTPUT_DIR / "app-icon.ico"
+print("Creating Windows ICO...")
 
-ico_sizes[0].save(
-    ico_path,
-    format="ICO",
-    sizes=[(s, s) for s in sizes]
+largest_png = (
+    OUTPUT_DIR /
+    "app-icon-512.png"
 )
 
-print("ICO generation completed.")
-print(f"Output: {ico_path}")
+image = Image.open(largest_png)
+
+ico_file = (
+    OUTPUT_DIR /
+    "app-icon.ico"
+)
+
+image.save(
+    ico_file,
+    format="ICO",
+    sizes=[
+        (16, 16),
+        (24, 24),
+        (32, 32),
+        (48, 48),
+        (64, 64),
+        (128, 128),
+        (256, 256)
+    ]
+)
+
+print(
+    f"Created {ico_file.name}"
+)
+
+print("Icon generation completed successfully.")
