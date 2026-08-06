@@ -1,0 +1,74 @@
+{
+    "schema_version": "1.0",
+
+    "application": {
+        "name": "PDF Integrity Friend",
+        "version": "1.0-Beta",
+        "publisher": "Ratio Juris"
+    },
+
+    "policy_defaults": {
+        "disable_editing": false,
+        "disable_copy": false,
+        "disable_print": false,
+        "disable_high_resolution_print": false,
+        "disable_commenting": false,
+        "disable_annotations": false,
+        "disable_form_filling": false,
+        "disable_page_extraction": false,
+        "disable_document_assembly": false
+    },
+
+    "permission_profiles": [
+        {
+            "id": "unrestricted",
+            "name": "Unrestricted",
+
+            "disable_editing": false,
+            "disable_copy": false,
+            "disable_print": false,
+            "disable_high_resolution_print": false,
+            "disable_commenting": false,
+            "disable_annotations": false,
+            "disable_form_filling": false,
+            "disable_page_extraction": false,
+            "disable_document_assembly": false
+        },
+        {
+            "id": "read_only",
+            "name": "Read Only",
+
+            "disable_editing": true,
+            "disable_copy": false,
+            "disable_print": false,
+            "disable_high_resolution_print": false,
+            "disable_commenting": true,
+            "disable_annotations": true,
+            "disable_form_filling": true,
+            "disable_page_extraction": true,
+            "disable_document_assembly": true
+        },
+        {
+            "id": "confidential",
+            "name": "Confidential",
+
+            "disable_editing": true,
+            "disable_copy": true,
+            "disable_print": true,
+            "disable_high_resolution_print": true,
+            "disable_commenting": true,
+            "disable_annotations": true,
+            "disable_form_filling": true,
+            "disable_page_extraction": true,
+            "disable_document_assembly": true
+        }
+    ],
+
+    "future_extensions": {
+        "allow_watermarking": true,
+        "allow_expiry_dates": true,
+        "allow_access_control": true,
+        "allow_certificate_restrictions": true,
+        "allow_irrevocable_locking": true
+    }
+}
