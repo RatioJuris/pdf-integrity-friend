@@ -1,0 +1,3 @@
+#include "version.rc"
+
+IDI_APP_ICON ICON "generated\\app-icon.ico"
