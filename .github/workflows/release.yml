@@ -34,15 +34,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      # 🛠️ REMOVED MANUAL CHOCO CAIRO AND PIP CODES. PYTHON SCRIPT SELF-INSTALLS AUTOMATICALLY
+      # 🛠️ SWAPPED FROM PYTHON TO PRE-INSTALLED NODE.JS ENGINE FOR ASSET GENERATION
       - name: Generate Icons
         run: |
-          python scripts/generate_icons.py
+          node scripts/generate_icons.js
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
