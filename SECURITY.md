@@ -5,7 +5,7 @@
 **Project:** PDF Integrity Friend  
 **Version:** 1.0-Beta  
 **Publisher:** Ratio Juris  
-**Repository:** https://github.com/RatioJuris/pdf-integrity-friend
+**Repository:** [pdf-integrity-friend](https://github.com/RatioJuris/pdf-integrity-friend)
 
 ---
 
@@ -78,7 +78,7 @@ Please allow reasonable time for investigation and remediation before public dis
 
 # License
 
-See LICENSE.md
+See [LICENSE.md](LICENSE.md)
 
 ---
 
