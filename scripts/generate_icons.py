@@ -1,18 +1,14 @@
 from pathlib import Path
-
 from PIL import Image
 import cairosvg
+import sys
+
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
 SVG_ICON = ROOT_DIR / "res" / "app-icon.svg"
 
 OUTPUT_DIR = ROOT_DIR / "res" / "generated"
-
-OUTPUT_DIR.mkdir(
-    parents=True,
-    exist_ok=True
-)
 
 ICON_SIZES = [
     16,
@@ -25,59 +21,144 @@ ICON_SIZES = [
     512
 ]
 
-generated_pngs = []
 
-print("Generating PNG files...")
-
-for size in ICON_SIZES:
-
-    output_file = (
-        OUTPUT_DIR /
-        f"app-icon-{size}.png"
+def generate_pngs() -> None:
+    OUTPUT_DIR.mkdir(
+        parents=True,
+        exist_ok=True
     )
 
-    cairosvg.svg2png(
-        url=str(SVG_ICON),
-        write_to=str(output_file),
-        output_width=size,
-        output_height=size
+    print("Generating PNG files...")
+
+    for size in ICON_SIZES:
+        output_file = OUTPUT_DIR / f"app-icon-{size}.png"
+
+        cairosvg.svg2png(
+            url=str(SVG_ICON),
+            write_to=str(output_file),
+            output_width=size,
+            output_height=size
+        )
+
+        print(f"Generated {output_file.name}")
+
+    print("PNG generation completed.")
+
+
+def generate_ico() -> None:
+    print("Creating Windows ICO...")
+
+    ico_layers = []
+    try:
+        for size in ICON_SIZES:
+            if size == 512:
+                continue
+            png_path = OUTPUT_DIR / f"app-icon-{size}.png"
+            if not png_path.exists():
+                raise FileNotFoundError(f"Missing required layer file: {png_path}")
+            ico_layers.append(Image.open(png_path))
+
+        ico_file = OUTPUT_DIR / "app-icon.ico"
+
+        base_image = ico_layers[0]
+        base_image.save(
+            ico_file,
+            format="ICO",
+            append_images=ico_layers[1:]
+        )
+
+        print(f"Created {ico_file.name}")
+
+    finally:
+        for layer in ico_layers:
+            layer.close()
+
+
+def generate_installer_assets() -> None:
+    print("Generating installer graphics...")
+
+    source_png = OUTPUT_DIR / "app-icon-512.png"
+
+    if not source_png.exists():
+        raise FileNotFoundError(
+            f"Missing source image: {source_png}"
+        )
+
+    image = Image.open(source_png)
+
+    banner = image.resize(
+        (493, 58),
+        Image.Resampling.LANCZOS
     )
 
-    generated_pngs.append(output_file)
-
-    print(
-        f"Generated {output_file.name}"
+    banner.save(
+        OUTPUT_DIR / "installer-banner.bmp",
+        format="BMP"
     )
 
-print("PNG generation completed.")
+    dialog = image.resize(
+        (493, 312),
+        Image.Resampling.LANCZOS
+    )
 
-print("Creating Windows ICO...")
+    dialog.save(
+        OUTPUT_DIR / "installer-dialog.bmp",
+        format="BMP"
+    )
 
-ico_layers = [
-    Image.open(p) for p in generated_pngs 
-    if p.name != "app-icon-512.png"
-]
+    banner.close()
+    dialog.close()
+    image.close()
 
-base_image = ico_layers[0]
+    print("Installer graphics generated.")
 
-ico_file = (
-    OUTPUT_DIR /
-    "app-icon.ico"
-)
 
-base_image.save(
-    ico_file,
-    format="ICO",
-    append_images=ico_layers[1:]
-)
+def verify_output() -> None:
+    for size in ICON_SIZES:
+        png_file = OUTPUT_DIR / f"app-icon-{size}.png"
 
-for layer in ico_layers:
-    layer.close()
+        if not png_file.exists():
+            raise FileNotFoundError(
+                f"PNG generation failed: {png_file}"
+            )
 
-print(
-    f"Created {ico_file.name}"
-)
+    required_files = [
+        OUTPUT_DIR / "app-icon.ico",
+        OUTPUT_DIR / "installer-banner.bmp",
+        OUTPUT_DIR / "installer-dialog.bmp"
+    ]
 
-print("Icon generation completed successfully.")
+    for file in required_files:
+        if not file.exists():
+            raise FileNotFoundError(
+                f"Missing generated file: {file}"
+            )
+
+    print("Verification completed successfully.")
+
+
+def main() -> int:
+    try:
+        if not SVG_ICON.exists():
+            raise FileNotFoundError(
+                f"SVG icon not found: {SVG_ICON}"
+            )
+
+        generate_pngs()
+        generate_ico()
+        generate_installer_assets()
+        verify_output()
+
+        print("Icon generation completed successfully.")
+
+        return 0
+
+    except Exception as ex:
+        print(f"ERROR: {ex}")
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
 
 RatioJurisBot = "RatioJurisBot"
