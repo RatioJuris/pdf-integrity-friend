@@ -1,4 +1,4 @@
-name: Release Packaging
+name: Release
 
 on:
   push:
@@ -9,9 +9,12 @@ on:
 permissions:
   contents: write
 
+env:
+  BOT_NAME: "RatioJurisBot"
+
 jobs:
+
   release:
-    runs-on: windows-latest
 
     strategy:
       fail-fast: false
@@ -20,15 +23,18 @@ jobs:
           - arch: x64
             qt_arch: win64_msvc2022_64
             build_dir: build/x64
-            output_dir: release-latest/windows-x64
+            release_dir: release-latest/x64
 
           - arch: x86
             qt_arch: win32_msvc2022
             build_dir: build/x86
-            output_dir: release-latest/windows-x86
+            release_dir: release-latest/x86
+
+    runs-on: windows-latest
 
     steps:
-      - name: Checkout
+
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -36,12 +42,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Dependencies
+      - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pillow cairosvg
 
-      # FIXED: Added native chocolatey deployment to supply required cairo-2.dll binaries to python environment
       - name: Install Cairo Library Binaries
         run: |
           choco install cairo -y
@@ -62,77 +67,103 @@ jobs:
           modules: qtpdf
 
       - name: Configure
+        shell: pwsh
         run: |
-          cmake -S . `
-                -B ${{ matrix.build_dir }} `
-                -DCMAKE_BUILD_TYPE=Release
+          cmake `
+            -S . `
+            -B "${{ matrix.build_dir }}" `
+            -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
+        shell: pwsh
         run: |
-          cmake --build ${{ matrix.build_dir }} --config Release
+          cmake `
+            --build "${{ matrix.build_dir }}" `
+            --config Release
 
-      - name: Create Release Layout
+      - name: Create Release Directory
         shell: pwsh
         run: |
           New-Item `
             -ItemType Directory `
             -Force `
-            -Path "${{ matrix.output_dir }}"
+            -Path "${{ matrix.release_dir }}"
 
-          New-Item `
-            -ItemType Directory `
-            -Force `
-            -Path "${{ matrix.output_dir }}\config"
-
-      - name: Copy Executable
+      - name: Copy Executable and Runtime
         shell: pwsh
         run: |
           Copy-Item `
             "${{ matrix.build_dir }}\Release\*" `
-            "${{ matrix.output_dir }}" `
+            "${{ matrix.release_dir }}" `
             -Recurse `
             -Force
 
-      - name: Copy Configuration
+      - name: Copy Config Files
         shell: pwsh
         run: |
+          New-Item `
+            -ItemType Directory `
+            -Force `
+            -Path "${{ matrix.release_dir }}\config"
+
           Copy-Item `
             "config\*" `
-            "${{ matrix.output_dir }}\config" `
+            "${{ matrix.release_dir }}\config" `
             -Recurse `
             -Force
 
       - name: Copy Documentation
         shell: pwsh
         run: |
-          Copy-Item LICENSE.md "${{ matrix.output_dir }}"
 
-          if(Test-Path README.md)
+          if (Test-Path LICENSE.md)
           {
-              Copy-Item README.md "${{ matrix.output_dir }}"
+              Copy-Item LICENSE.md "${{ matrix.release_dir }}"
           }
 
-          if(Test-Path SECURITY.md)
+          if (Test-Path README.md)
           {
-              Copy-Item SECURITY.md "${{ matrix.output_dir }}"
+              Copy-Item README.md "${{ matrix.release_dir }}"
           }
 
-          if(Test-Path CHANGELOG.md)
+          if (Test-Path SECURITY.md)
           {
-              Copy-Item CHANGELOG.md "${{ matrix.output_dir }}"
+              Copy-Item SECURITY.md "${{ matrix.release_dir }}"
           }
 
-      - name: Create ZIP
+          if (Test-Path CHANGELOG.md)
+          {
+              Copy-Item CHANGELOG.md "${{ matrix.release_dir }}"
+          }
+
+      - name: Create Portable ZIP
         shell: pwsh
         run: |
+
           Compress-Archive `
-            -Path "${{ matrix.output_dir }}\*" `
-            -DestinationPath `
-            "release-latest/pdf-integrity-friend-${{ matrix.arch }}.zip" `
+            -Path "${{ matrix.release_dir }}\*" `
+            -DestinationPath "release-latest\portable-${{ matrix.arch }}.zip" `
             -Force
 
-      - name: Upload Release Files
+      - name: Upload Portable Package
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.arch }}
-          path: release-latest
+          name: portable-${{ matrix.arch }}
+          path: release-latest/portable-${{ matrix.arch }}.zip
+
+  github-release:
+
+    needs: release
+    runs-on: windows-latest
+
+    steps:
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            **/*.zip
+          generate_release_notes: true
