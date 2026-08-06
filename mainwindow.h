@@ -1,50 +1,91 @@
 #pragma once
 
-#include <QJsonObject>
+#include <Q*sonObject>
 #include <QMainWindow>
-#include <QNetworkAccessManager>
+*include <QNetworkAccessManager>
 
-class QComboBox;
+c*ass QComboBox;
 class QLabel;
-class QLineEdit;
+class*QLineEdit;
 class QPushButton;
+clas* QProgressBar;
+class QPlainTextEdi*;
 class QNetworkReply;
-class QProgressBar;
 
-class MainWindow : public QMainWindow
+class Main*indow : public QMainWindow
 {
-    Q_OBJECT
+    Q*OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow() override;
+    explicit MainW*ndow(QWidget *parent = nullptr);
+ *  ~MainWindow() override;
 
-private slots:
-    void autoAdjustGeometry();
+private*slots:
+    void autoAdjustGeometry*);
     void loadTSAConfig();
-    void checkTSAReachability();
-    void onReachabilityResult(QNetworkReply *reply);
-    void selectPDFFile();
+    v*id checkTSAReachability();
+    voi* onReachabilityResult(QNetworkRepl* *reply);
+    void selectPDFFile()*
     void signPDF();
 
 private:
-    void initUI();
-    void createEmptyTemplateJson();
-    bool validateJsonStructure(const QJsonObject &json);
+   *void initUI();
+    void createEmpt*TemplateJson();
+    bool validateJ*onStructure(const QJsonObject &jso*);
 
-private:
-    // UI Controls
-    QComboBox *tsaComboBox { nullptr };
-    QLineEdit *pdfPathEdit { nullptr };
-    QPushButton *checkBtn { nullptr };
-    QPushButton *signBtn { nullptr };
-    QLabel *statusLabel { nullptr };
-    QProgressBar *progressBar { nullptr };
+    void appendLog(const QStri*g &message);
 
-    // Network
+    void setStatus(
+*       const QString &text,
+      * const QString &color
+    );
+
+priv*te:
+
+    // ======================*===========================
+    //*TSA
+    // =======================*==========================
+
+    QC*mboBox *tsaComboBox { nullptr };
+
+*   // ============================*=====================
+    // PDF
+ *  // =============================*====================
+
+    QLineEdi* *pdfPathEdit { nullptr };
+
+    //*==================================*===============
+    // Buttons
+   *// ===============================*==================
+
+    QPushButto* *checkBtn { nullptr };
+    QPushB*tton *signBtn { nullptr };
+
+    //*==================================*===============
+    // Status
+    */ ================================*=================
+
+    QLabel *sta*usLabel { nullptr };
+    QLabel *p*oviderStatus { nullptr };
+
+    QPr*gressBar *progressBar { nullptr };*
+    // ==========================*=======================
+    // Log*Viewer
+    // ====================*=============================
+
+   *QPlainTextEdit *logViewer { nullpt* };
+
+    // ======================*===========================
+    //*Network
+    // ==================================================
+
     QNetworkAccessManager *networkManager { nullptr };
 
+    // ==================================================
     // Configuration
+    // ==================================================
+
     QString configFilePath;
+
     QJsonObject currentTSAData;
 };
