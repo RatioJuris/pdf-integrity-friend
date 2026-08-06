@@ -44,16 +44,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      # 🛠️ REMOVED EXPLICIT PIP PACKAGES. THE SCRIPT SELF-INSTALLS AUTOMATICALLY.
+      # 🛠️ SWAPPED FROM PYTHON TO NODE.JS FOR ROBUST IMAGE GENERATION
       - name: Generate Icons
         shell: pwsh
         run: |
-          python scripts/generate_icons.py
+          node scripts/generate_icons.js
 
       - name: Verify Generated Resources
         shell: pwsh
