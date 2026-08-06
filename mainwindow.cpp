@@ -1,209 +1,391 @@
 #include "mainwindow.h"
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QFileDialog>
-#include <QScreen>
-#include <QGuiApplication>
-#include <QFile>
-#include <QJsonDocument>
-#include <QJsonArray>
-#include <QNetworkRequest>
-#include <QMessageBox>
-#include <QSaveFile>
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-    networkManager = new QNetworkAccessManager(this);
-    configFilePath = "tsa_config.json";
-    
+#include <QFile>
+#include <QFileDialog>
+#include <QGuiApplication>
+#include <QHBoxLayout>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QLabel>
+#include <QMessageBox>
+#include <QNetworkRequest>
+#include <QSaveFile>
+#include <QScreen>
+#include <QUrl>
+#include <QVBoxLayout>
+
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent),
+      networkManager(new QNetworkAccessManager(this)),
+      configFilePath("tsa_config.json")
+{
     initUI();
     loadTSAConfig();
     autoAdjustGeometry();
-    
-    connect(networkManager, &QNetworkAccessManager::finished, this, &MainWindow::onReachabilityResult);
+
+    connect(
+        networkManager,
+        &QNetworkAccessManager::finished,
+        this,
+        &MainWindow::onReachabilityResult
+    );
 }
 
-MainWindow::~MainWindow() {}
+MainWindow::~MainWindow() = default;
 
-void MainWindow::initUI() {
-    this->setWindowTitle("PDF Integrity Friend - by RatioJuris");
-    
-    QWidget* centralWidget = new QWidget(this);
-    QVBoxLayout* mainLayout = new QVBoxLayout(centralWidget);
+void MainWindow::initUI()
+{
+    setWindowTitle("PDF Integrity Friend");
 
-    // TSA Dropdown Selection
-    QHBoxLayout* tsaLayout = new QHBoxLayout();
-    tsaLayout->addWidget(new QLabel("TSA Provider:"));
+    auto *centralWidget = new QWidget(this);
+    auto *mainLayout = new QVBoxLayout(centralWidget);
+
+    // TSA Selection
+    auto *tsaLayout = new QHBoxLayout();
+
+    auto *tsaLabel = new QLabel("TSA Provider:");
     tsaComboBox = new QComboBox();
+
+    tsaLayout->addWidget(tsaLabel);
     tsaLayout->addWidget(tsaComboBox);
+
     mainLayout->addLayout(tsaLayout);
 
-    // File Selection Row
-    QHBoxLayout* fileLayout = new QHBoxLayout();
+    // PDF Selection
+    auto *fileLayout = new QHBoxLayout();
+
     pdfPathEdit = new QLineEdit();
-    pdfPathEdit->setPlaceholderText("Select target PDF file path...");
-    QPushButton* browseBtn = new QPushButton("Browse");
-    connect(browseBtn, &QPushButton::clicked, this, &MainWindow::selectPDFFile);
+    pdfPathEdit->setPlaceholderText("Select a PDF document...");
+
+    auto *browseButton = new QPushButton("Browse");
+
+    connect(
+        browseButton,
+        &QPushButton::clicked,
+        this,
+        &MainWindow::selectPDFFile
+    );
+
     fileLayout->addWidget(pdfPathEdit);
-    fileLayout->addWidget(browseBtn);
+    fileLayout->addWidget(browseButton);
+
     mainLayout->addLayout(fileLayout);
 
-    // Dynamic State Monitoring Panel
-    statusLabel = new QLabel("Status: Awaiting Initial Configuration Check...");
+    // Status
+    statusLabel = new QLabel("Ready");
     statusLabel->setAlignment(Qt::AlignCenter);
     statusLabel->setWordWrap(true);
+
     mainLayout->addWidget(statusLabel);
 
-    // Control Cluster Elements
-    QHBoxLayout* btnLayout = new QHBoxLayout();
-    checkBtn = new QPushButton("Verify TSA Pipeline");
-    signBtn = new QPushButton("Sign Document");
-    QPushButton* resizeBtn = new QPushButton("Recenter Framework");
-    
-    connect(checkBtn, &QPushButton::clicked, this, &MainWindow::checkTSAReachability);
-    connect(signBtn, &QPushButton::clicked, this, &MainWindow::signPDF);
-    connect(resizeBtn, &QPushButton::clicked, this, &MainWindow::autoAdjustGeometry);
+    // Controls
+    auto *buttonLayout = new QHBoxLayout();
 
-    btnLayout->addWidget(checkBtn);
-    btnLayout->addWidget(signBtn);
-    btnLayout->addWidget(resizeBtn);
-    mainLayout->addLayout(btnLayout);
+    checkBtn = new QPushButton("Verify TSA");
+    signBtn = new QPushButton("Sign PDF");
+
+    auto *recenterButton = new QPushButton("Center Window");
+
+    connect(
+        checkBtn,
+        &QPushButton::clicked,
+        this,
+        &MainWindow::checkTSAReachability
+    );
+
+    connect(
+        signBtn,
+        &QPushButton::clicked,
+        this,
+        &MainWindow::signPDF
+    );
+
+    connect(
+        recenterButton,
+        &QPushButton::clicked,
+        this,
+        &MainWindow::autoAdjustGeometry
+    );
+
+    buttonLayout->addWidget(checkBtn);
+    buttonLayout->addWidget(signBtn);
+    buttonLayout->addWidget(recenterButton);
+
+    mainLayout->addLayout(buttonLayout);
 
     setCentralWidget(centralWidget);
 }
 
-void MainWindow::autoAdjustGeometry() {
-    // Collect display topology details at runtime
+void MainWindow::autoAdjustGeometry()
+{
     QScreen *screen = QGuiApplication::primaryScreen();
-    QRect screenGeometry = screen->geometry();
-    int screenWidth = screenGeometry.width();
-    int screenHeight = screenGeometry.height();
 
-    // Map proportions securely matching high-DPI viewports
-    int targetWidth = qMax(420, static_cast<int>(screenWidth * 0.25));
-    int targetHeight = qMax(220, static_cast<int>(screenHeight * 0.20));
+    if (!screen)
+    {
+        resize(600, 350);
+        return;
+    }
 
-    // Derive precise layout spatial center points
-    int x = (screenWidth - targetWidth) / 2;
-    int y = (screenHeight - targetHeight) / 2;
+    const QRect geometry = screen->availableGeometry();
 
-    this->setGeometry(x, y, targetWidth, targetHeight);
-    this->setFixedSize(targetWidth, targetHeight); 
+    const int width =
+        qMax(600, static_cast<int>(geometry.width() * 0.30));
+
+    const int height =
+        qMax(350, static_cast<int>(geometry.height() * 0.25));
+
+    resize(width, height);
+
+    move(
+        geometry.center().x() - width / 2,
+        geometry.center().y() - height / 2
+    );
 }
 
-void MainWindow::loadTSAConfig() {
+void MainWindow::loadTSAConfig()
+{
     QFile file(configFilePath);
-    if (!file.exists()) {
+
+    if (!file.exists())
+    {
         createEmptyTemplateJson();
-        statusLabel->setText("Config template created! Populate 'tsa_config.json' with URLs.");
+
+        statusLabel->setText(
+            "Configuration file created. Add TSA providers and restart."
+        );
+
         return;
     }
 
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        statusLabel->setText("Error: Execution configuration file locked or unreadable.");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        statusLabel->setText(
+            "Unable to read TSA configuration."
+        );
+
         return;
     }
 
-    QJsonParseError parseError;
-    QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+    QJsonParseError error;
+    QJsonDocument document =
+        QJsonDocument::fromJson(file.readAll(), &error);
+
     file.close();
 
-    if (parseError.error != QJsonParseError::NoError || !doc.isObject()) {
-        statusLabel->setText("JSON Struct Broken! Reverting file to empty structure.");
-        createEmptyTemplateJson();
+    if (error.error != QJsonParseError::NoError ||
+        !document.isObject())
+    {
+        statusLabel->setText(
+            "Invalid configuration file."
+        );
+
         return;
     }
 
-    QJsonObject root = doc.object();
-    if (!validateJsonStructure(root)) {
-        statusLabel->setText("Validation failed! Missing key values inside JSON nodes.");
-        createEmptyTemplateJson();
+    const QJsonObject root = document.object();
+
+    if (!validateJsonStructure(root))
+    {
+        statusLabel->setText(
+            "Configuration validation failed."
+        );
+
         return;
     }
 
     currentTSAData = root;
+
     tsaComboBox->clear();
-    QJsonArray providers = root["providers"].toArray();
-    
-    if(providers.isEmpty()) {
-        statusLabel->setText("Notice: 'tsa_config.json' is currently empty. Add your TSA URLs.");
-        return;
+
+    const QJsonArray providers =
+        root["providers"].toArray();
+
+    for (const auto &providerValue : providers)
+    {
+        const QJsonObject provider =
+            providerValue.toObject();
+
+        tsaComboBox->addItem(
+            provider["name"].toString(),
+            provider["url"].toString()
+        );
     }
 
-    for (const QJsonValue& val : providers) {
-        tsaComboBox->addItem(val.toObject()["name"].toString(), val.toObject()["url"].toString());
-    }
-    statusLabel->setText("Status: Configuration Map Loaded Effectively.");
+    statusLabel->setText(
+        QString("Loaded %1 TSA provider(s).")
+            .arg(tsaComboBox->count())
+    );
 }
 
-bool MainWindow::validateJsonStructure(const QJsonObject& json) {
-    if (!json.contains("providers") || !json["providers"].isArray()) return false;
-    QJsonArray arr = json["providers"].toArray();
-    for (const QJsonValue& val : arr) {
-        if (!val.isObject()) return false;
-        QJsonObject obj = val.toObject();
-        if (!obj.contains("name") || !obj.contains("url") || !obj.contains("auth_required")) return false;
+bool MainWindow::validateJsonStructure(
+    const QJsonObject &json)
+{
+    if (!json.contains("providers") ||
+        !json["providers"].isArray())
+    {
+        return false;
     }
+
+    const QJsonArray providers =
+        json["providers"].toArray();
+
+    for (const auto &entry : providers)
+    {
+        if (!entry.isObject())
+        {
+            return false;
+        }
+
+        const QJsonObject provider =
+            entry.toObject();
+
+        if (!provider.contains("name") ||
+            !provider.contains("url") ||
+            !provider.contains("auth_required"))
+        {
+            return false;
+        }
+
+        if (provider["name"].toString().trimmed().isEmpty())
+        {
+            return false;
+        }
+
+        if (provider["url"].toString().trimmed().isEmpty())
+        {
+            return false;
+        }
+    }
+
     return true;
 }
 
-void MainWindow::createEmptyTemplateJson() {
+void MainWindow::createEmptyTemplateJson()
+{
     QJsonObject root;
-    QJsonArray providers; // Completely clean array loop to prevent hardcoded endpoint embedding
+    root["providers"] = QJsonArray();
 
-    root["providers"] = providers;
-
-    // Use QSaveFile for safe atomic writes on storage blocks
     QSaveFile file(configFilePath);
-    if (file.open(QIODevice::WriteOnly)) {
-        QJsonDocument doc(root);
-        file.write(doc.toJson(QJsonDocument::Indented));
-        file.commit();
-    }
-}
 
-void MainWindow::checkTSAReachability() {
-    if (tsaComboBox->count() == 0) {
-        QMessageBox::critical(this, "Empty Profile", "No custom TSA endpoints discovered inside local config directory.");
+    if (!file.open(QIODevice::WriteOnly))
+    {
         return;
     }
 
-    QString tsaUrl = tsaComboBox->currentData().toString();
-    statusLabel->setText("Testing active secure pipelines...");
-    checkBtn->setEnabled(false);
+    QJsonDocument document(root);
 
-    QNetworkRequest request((QUrl(tsaUrl)));
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/timestamp-query");
-    
-    // Process asynchronous endpoint ping securely
-    networkManager->post(request, QByteArray()); 
+    file.write(
+        document.toJson(QJsonDocument::Indented)
+    );
+
+    file.commit();
 }
 
-void MainWindow::onReachabilityResult(QNetworkReply* reply) {
-    checkBtn->setEnabled(true);
-    // Standard RFC3161 processing returns 400 Bad Request to blank posts, acknowledging server visibility
-    int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    
-    if (reply->error() == QNetworkReply::NoError || statusCode == 400 || statusCode == 200) {
-        statusLabel->setText("Pipeline Verification Success: Endpoint is online.");
-        statusLabel->setStyleSheet("color: #2e7d32; font-weight: bold;");
-    } else {
-        statusLabel->setText("Pipeline Verification Error: " + reply->errorString());
-        statusLabel->setStyleSheet("color: #c62828;");
+void MainWindow::checkTSAReachability()
+{
+    if (tsaComboBox->count() == 0)
+    {
+        QMessageBox::warning(
+            this,
+            "No Providers",
+            "No TSA providers are configured."
+        );
+
+        return;
     }
+
+    const QString tsaUrl =
+        tsaComboBox->currentData().toString();
+
+    statusLabel->setText(
+        "Checking TSA endpoint..."
+    );
+
+    checkBtn->setEnabled(false);
+
+    QNetworkRequest request(QUrl(tsaUrl));
+
+    request.setHeader(
+        QNetworkRequest::ContentTypeHeader,
+        "application/timestamp-query"
+    );
+
+    networkManager->post(request, QByteArray());
+}
+
+void MainWindow::onReachabilityResult(
+    QNetworkReply *reply)
+{
+    checkBtn->setEnabled(true);
+
+    const int statusCode =
+        reply->attribute(
+                 QNetworkRequest::HttpStatusCodeAttribute)
+            .toInt();
+
+    if (reply->error() == QNetworkReply::NoError ||
+        statusCode == 200 ||
+        statusCode == 400)
+    {
+        statusLabel->setText(
+            "TSA endpoint is reachable."
+        );
+
+        statusLabel->setStyleSheet(
+            "color: green; font-weight: bold;"
+        );
+    }
+    else
+    {
+        statusLabel->setText(
+            QString("Connection failed: %1")
+                .arg(reply->errorString())
+        );
+
+        statusLabel->setStyleSheet(
+            "color: red;"
+        );
+    }
+
     reply->deleteLater();
 }
 
-void MainWindow::selectPDFFile() {
-    QString file = QFileDialog::getOpenFileName(this, "Open Integrity Context Target", "", "PDF Document Types (*.pdf)");
-    if (!file.isEmpty()) {
-        pdfPathEdit->setText(file);
+void MainWindow::selectPDFFile()
+{
+    const QString filePath =
+        QFileDialog::getOpenFileName(
+            this,
+            "Select PDF Document",
+            QString(),
+            "PDF Files (*.pdf)"
+        );
+
+    if (!filePath.isEmpty())
+    {
+        pdfPathEdit->setText(filePath);
     }
 }
 
-void MainWindow::signPDF() {
-    if (pdfPathEdit->text().isEmpty()) {
-        QMessageBox::warning(this, "Execution Error", "No target file was linked to the signing stack.");
+void MainWindow::signPDF()
+{
+    const QString pdfFile =
+        pdfPathEdit->text().trimmed();
+
+    if (pdfFile.isEmpty())
+    {
+        QMessageBox::warning(
+            this,
+            "No PDF Selected",
+            "Please select a PDF document first."
+        );
+
         return;
     }
-    QMessageBox::information(this, "Process Active", "PDF file targets isolated. Proceeding with OpenSSL verification checks.");
+
+    QMessageBox::information(
+        this,
+        "Not Yet Implemented",
+        "PDF signing functionality has not yet been implemented."
+    );
 }
