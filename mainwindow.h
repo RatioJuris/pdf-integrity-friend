@@ -9,6 +9,7 @@ class QLabel;
 class QLineEdit;
 class QPushButton;
 class QNetworkReply;
+class QProgressBar;
 
 class MainWindow : public QMainWindow
 {
@@ -38,6 +39,7 @@ private:
     QPushButton *checkBtn { nullptr };
     QPushButton *signBtn { nullptr };
     QLabel *statusLabel { nullptr };
+    QProgressBar *progressBar { nullptr };
 
     // Network
     QNetworkAccessManager *networkManager { nullptr };
