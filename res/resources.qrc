@@ -1,0 +1,10 @@
+<RCC version="1.0">
+    <qresource prefix="/">
+        <!-- Application Icon -->
+        generated/app-icon-512.png
+
+        <!-- Styles -->
+        styles/light.qss
+        styles/dark.qss
+    </qresource>
+</RCC>
