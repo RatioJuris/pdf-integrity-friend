@@ -1,8 +1,8 @@
 # PDF Integrity Friend
 
-**Version:** 1.0-Beta  
-**Publisher:** [Ratio Juris](https://github.com/RatioJuris/)
-**Repository:** [pdf-integrity-friend](https://github.com/RatioJuris/pdf-integrity-friend/)
+* **Version:** 1.0-Beta  
+* **Publisher:** [Ratio Juris](https://github.com/RatioJuris/) 
+* **Repository:** [pdf-integrity-friend](https://github.com/RatioJuris/pdf-integrity-friend/)
 
 ---
 
