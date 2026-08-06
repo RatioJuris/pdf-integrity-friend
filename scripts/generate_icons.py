@@ -1,6 +1,6 @@
 from pathlib import Path
 from PIL import Image
-import cairosvg
+import pillow
 import sys
 
 
