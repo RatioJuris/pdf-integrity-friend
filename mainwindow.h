@@ -1,43 +1,48 @@
 #pragma once
 
+#include <QJsonObject>
 #include <QMainWindow>
 #include <QNetworkAccessManager>
-#include <QNetworkReply>
-#include <QComboBox>
-#include <QPushButton>
-#include <QLineEdit>
-#include <QLabel>
-#include <QJsonObject>
 
-class MainWindow : public QMainWindow {
+class QComboBox;
+class QLabel;
+class QLineEdit;
+class QPushButton;
+class QNetworkReply;
+
+class MainWindow : public QMainWindow
+{
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    explicit MainWindow(QWidget *parent = nullptr);
+    ~MainWindow() override;
 
 private slots:
     void autoAdjustGeometry();
     void loadTSAConfig();
     void checkTSAReachability();
-    void onReachabilityResult(QNetworkReply* reply);
+    void onReachabilityResult(QNetworkReply *reply);
     void selectPDFFile();
     void signPDF();
 
 private:
     void initUI();
     void createEmptyTemplateJson();
-    bool validateJsonStructure(const QJsonObject& json);
+    bool validateJsonStructure(const QJsonObject &json);
 
-    // UI Elements
-    QComboBox* tsaComboBox;
-    QLineEdit* pdfPathEdit;
-    QPushButton* checkBtn;
-    QPushButton* signBtn;
-    QLabel* statusLabel;
+private:
+    // UI Controls
+    QComboBox *tsaComboBox { nullptr };
+    QLineEdit *pdfPathEdit { nullptr };
+    QPushButton *checkBtn { nullptr };
+    QPushButton *signBtn { nullptr };
+    QLabel *statusLabel { nullptr };
 
-    // Network & Config Management
-    QNetworkAccessManager* networkManager;
+    // Network
+    QNetworkAccessManager *networkManager { nullptr };
+
+    // Configuration
     QString configFilePath;
     QJsonObject currentTSAData;
 };
