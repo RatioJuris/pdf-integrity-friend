@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - main
-
   pull_request:
     branches:
       - main
-
   workflow_dispatch:
 
 permissions:
@@ -20,40 +18,23 @@ env:
   BOT_NAME: RatioJurisBot
 
 jobs:
-
   build:
-
     runs-on: windows-latest
 
     strategy:
       fail-fast: false
-
       matrix:
         include:
-
           - arch: x64
             qt_arch: win64_msvc2022_64
             build_dir: build/x64
-
           - arch: x86
             qt_arch: win32_msvc2022
             build_dir: build/x86
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      # 🛠️ SWAPPED FROM PYTHON TO NODE.JS FOR ROBUST IMAGE GENERATION
-      - name: Generate Icons
-        shell: pwsh
-        run: |
-          node scripts/generate_icons.js
-
-      - name: Verify Generated Resources
-        shell: pwsh
-        run: |
-          Get-ChildItem res/generated
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -63,6 +44,17 @@ jobs:
           target: desktop
           arch: ${{ matrix.qt_arch }}
           modules: qtpdf
+
+      # 🌟 RE-ORDERED: Executes natively using the initialized Qt environment paths
+      - name: Generate Icons via Qt PowerShell
+        shell: pwsh
+        run: |
+          ./scripts/generate_icons.ps1
+
+      - name: Verify Generated Resources
+        shell: pwsh
+        run: |
+          Get-ChildItem res/generated
 
       - name: Configure CMake
         shell: pwsh
