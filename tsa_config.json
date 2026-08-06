@@ -1,39 +1,149 @@
 {
+    "schema_version": "2.0",
+
+    "application": {
+        "name": "PDF Integrity Friend",
+        "author": "RatioJuris",
+        "default_provider": "DigiCert TSA",
+        "auto_validate_on_startup": true,
+        "strict_https": true
+    },
+
+    "network": {
+        "connect_timeout_seconds": 10,
+        "request_timeout_seconds": 30,
+        "max_retries": 3,
+        "retry_delay_seconds": 2,
+        "verify_ssl_certificates": true
+    },
+
+    "signing": {
+        "default_hash_algorithm": "SHA256",
+        "allow_sha1": false,
+        "attach_timestamp": true,
+        "embed_certificate_chain": true,
+        "validate_before_signing": true
+    },
+
     "providers": [
         {
-            "auth_required": false,
+            "id": "digicert",
             "name": "DigiCert TSA",
-            "url": "http://timestamp.digicert.com"
+            "enabled": true,
+
+            "endpoint": {
+                "url": "https://timestamp.digicert.com",
+                "protocol": "RFC3161"
+            },
+
+            "authentication": {
+                "required": false,
+                "type": "none",
+                "username": "",
+                "password": ""
+            },
+
+            "security": {
+                "verify_ssl": true,
+                "minimum_tls_version": "TLS1.2"
+            },
+
+            "capabilities": {
+                "sha256": true,
+                "sha384": true,
+                "sha512": true
+            },
+
+            "metadata": {
+                "organization": "DigiCert",
+                "description": "Public RFC3161 timestamp service",
+                "country": "US"
+            }
         },
+
         {
-            "auth_required": false,
+            "id": "sectigo",
             "name": "Sectigo TSA",
-            "url": "http://timestamp.sectigo.com"
+            "enabled": true,
+
+            "endpoint": {
+                "url": "https://timestamp.sectigo.com",
+                "protocol": "RFC3161"
+            },
+
+            "authentication": {
+                "required": false,
+                "type": "none"
+            },
+
+            "security": {
+                "verify_ssl": true,
+                "minimum_tls_version": "TLS1.2"
+            },
+
+            "capabilities": {
+                "sha256": true,
+                "sha384": true,
+                "sha512": true
+            },
+
+            "metadata": {
+                "organization": "Sectigo",
+                "description": "Public RFC3161 timestamp authority"
+            }
         },
+
         {
-            "auth_required": false,
-            "name": "GlobalSign TSA (Advanced)",
-            "url": "http://timestamp.globalsign.com/tsa/r6advanced1"
-        },
-        {
-            "auth_required": false,
-            "name": "Apple Time Stamping",
-            "url": "http://timestamp.apple.com/ts01"
-        },
-        {
-            "auth_required": false,
-            "name": "Entrust TSA (RFC3161 SHA2)",
-            "url": "http://timestamp.entrust.net/TSS/RFC3161sha2TS"
-        },
-        {
-            "auth_required": false,
-            "name": "Certum (Asseco Data Systems)",
-            "url": "http://time.certum.pl"
-        },
-        {
-            "auth_required": false,
-            "name": "DFN-PKI Zeitstempel (Germany)",
-            "url": "http://zeitstempel.dfn.de"
+            "id": "globalsign",
+            "name": "GlobalSign TSA",
+
+            "enabled": true,
+
+            "endpoint": {
+                "url": "https://timestamp.globalsign.com/tsa/r6advanced1",
+                "protocol": "RFC3161"
+            },
+
+            "authentication": {
+                "required": false,
+                "type": "none"
+            },
+
+            "security": {
+                "verify_ssl": true,
+                "minimum_tls_version": "TLS1.2"
+            },
+
+            "capabilities": {
+                "sha256": true,
+                "sha384": true,
+                "sha512": true
+            },
+
+            "metadata": {
+                "organization": "GlobalSign",
+                "description": "Advanced timestamp service"
+            }
         }
-    ]
+    ],
+
+    "certificate_validation": {
+        "enable_ocsp": true,
+        "enable_crl_check": true,
+        "allow_expired_timestamp_tokens": false
+    },
+
+    "logging": {
+        "enabled": true,
+        "level": "INFO",
+        "log_file": "pdf-integrity-friend.log"
+    },
+
+    "future_extensions": {
+        "pkcs11_support": false,
+        "hsm_support": false,
+        "azure_key_vault": false,
+        "aws_kms": false,
+        "google_cloud_kms": false
+    }
 }
