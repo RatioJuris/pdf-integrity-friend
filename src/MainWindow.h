@@ -5,6 +5,7 @@
 #include <QString>
 #include <QVector>
 
+class QAction;
 class QLabel;
 class QSplitter;
 class QListWidget;
@@ -29,11 +30,11 @@ public:
 
 private slots:
     void openPdf();
-    void savePdf(); // Fixed missing semicolon here
-
+    void savePdf();
     void loadTSAConfig();
+
     void checkTSAReachability();
-    void onReachabilityResult(QNetworkReply *reply); // Fixed double asterisk pointer (**reply)
+    void onReachabilityResult(QNetworkReply *reply);
 
     void addVisibleSignature();
     void removeSelectedSignature();
@@ -46,27 +47,22 @@ private:
     void initializeStatusBar();
 
     void loadStyleSheet(const QString &resourcePath);
-
     void appendLog(const QString &message);
-
-    void setStatus(
-        const QString &text,
-        const QString &color = QStringLiteral("#1565c0"));
+    void setStatus(const QString &text, const QString &color = QStringLiteral("#1565c0"));
 
     void createEmptyTemplateJson();
-
-    [[nodiscard]] bool validateJsonStructure(const QJsonObject &json);
+    
+    [[nodiscard]]
+    bool validateJsonStructure(const QJsonObject &json) const;
 
 private:
     QSplitter *mainSplitter{nullptr};
 
-    QPdfDocument *pdfDocument{nullptr}; // Fixed double asterisk pointer (**dfDocument)
+    QPdfDocument *pdfDocument{nullptr};
     QPdfView *pdfView{nullptr};
-
-    QListWidget *pageList{nullptr}; // Fixed double asterisk pointer (**pageList)
+    QListWidget *pageList{nullptr};
 
     QListWidget *signatureList{nullptr};
-
     QPushButton *addSignatureButton{nullptr};
     QPushButton *removeSignatureButton{nullptr};
 
@@ -80,14 +76,13 @@ private:
 
     QLabel *statusLabel{nullptr};
     QLabel *tsaStatusLabel{nullptr};
-
-    QNetworkAccessManager *networkManager{nullptr};
-
     QProgressBar *progressBar{nullptr};
     QPlainTextEdit *logOutput{nullptr};
 
+    QNetworkAccessManager *networkManager{nullptr};
+
     QString currentPdfFile;
     QString configFilePath;
-
     QJsonObject currentTSAData;
+    bool isDarkTheme{false};
 };
