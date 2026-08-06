@@ -1,89 +1,98 @@
 #pragma once
 
-#include <Q*sonObject>
+#include <QJsonObject>
 #include <QMainWindow>
-*include <QNetworkAccessManager>
+#include <QNetworkAccessManager>
+#include <QString>
 
-c*ass QComboBox;
+class QComboBox;
 class QLabel;
-class*QLineEdit;
+class QLineEdit;
 class QPushButton;
-clas* QProgressBar;
-class QPlainTextEdi*;
+class QProgressBar;
+class QPlainTextEdit;
 class QNetworkReply;
 
-class Main*indow : public QMainWindow
+class MainWindow : public QMainWindow
 {
-    Q*OBJECT
+    Q_OBJECT
 
 public:
-    explicit MainW*ndow(QWidget *parent = nullptr);
- *  ~MainWindow() override;
+    explicit MainWindow(QWidget *parent = nullptr);
+    ~MainWindow() override;
 
-private*slots:
-    void autoAdjustGeometry*);
+private slots:
+    void autoAdjustGeometry();
     void loadTSAConfig();
-    v*id checkTSAReachability();
-    voi* onReachabilityResult(QNetworkRepl* *reply);
-    void selectPDFFile()*
+    void checkTSAReachability();
+    void onReachabilityResult(QNetworkReply *reply);
+    void selectPDFFile();
     void signPDF();
 
 private:
-   *void initUI();
-    void createEmpt*TemplateJson();
-    bool validateJ*onStructure(const QJsonObject &jso*);
+    // UI
+    void initUI();
 
-    void appendLog(const QStri*g &message);
+    // Configuration
+    void createEmptyTemplateJson();
+    bool validateJsonStructure(const QJsonObject &json);
 
+    // Helpers
+    void appendLog(const QString &message);
     void setStatus(
-*       const QString &text,
-      * const QString &color
+        const QString &text,
+        const QString &color = "#1565c0"
     );
 
-priv*te:
+private:
 
-    // ======================*===========================
-    //*TSA
-    // =======================*==========================
+    //--------------------------------------------------
+    // TSA
+    //--------------------------------------------------
 
-    QC*mboBox *tsaComboBox { nullptr };
+    QComboBox *tsaComboBox{nullptr};
 
-*   // ============================*=====================
+    //--------------------------------------------------
     // PDF
- *  // =============================*====================
+    //--------------------------------------------------
 
-    QLineEdi* *pdfPathEdit { nullptr };
+    QLineEdit *pdfPathEdit{nullptr};
 
-    //*==================================*===============
+    //--------------------------------------------------
     // Buttons
-   *// ===============================*==================
+    //--------------------------------------------------
 
-    QPushButto* *checkBtn { nullptr };
-    QPushB*tton *signBtn { nullptr };
+    QPushButton *checkBtn{nullptr};
+    QPushButton *signBtn{nullptr};
 
-    //*==================================*===============
+    //--------------------------------------------------
     // Status
-    */ ================================*=================
+    //--------------------------------------------------
 
-    QLabel *sta*usLabel { nullptr };
-    QLabel *p*oviderStatus { nullptr };
+    QLabel *statusLabel{nullptr};
+    QLabel *providerStatus{nullptr};
 
-    QPr*gressBar *progressBar { nullptr };*
-    // ==========================*=======================
-    // Log*Viewer
-    // ====================*=============================
+    //--------------------------------------------------
+    // Progress
+    //--------------------------------------------------
 
-   *QPlainTextEdit *logViewer { nullpt* };
+    QProgressBar *progressBar{nullptr};
 
-    // ======================*===========================
-    //*Network
-    // ==================================================
+    //--------------------------------------------------
+    // Log Viewer
+    //--------------------------------------------------
 
-    QNetworkAccessManager *networkManager { nullptr };
+    QPlainTextEdit *logViewer{nullptr};
 
-    // ==================================================
+    //--------------------------------------------------
+    // Network
+    //--------------------------------------------------
+
+    QNetworkAccessManager *networkManager{nullptr};
+
+    //--------------------------------------------------
     // Configuration
-    // ==================================================
+    //--------------------------------------------------
 
     QString configFilePath;
 
