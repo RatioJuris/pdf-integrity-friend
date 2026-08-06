@@ -29,10 +29,10 @@ PDF Integrity Friend is a Windows desktop application for secure PDF signing, vi
 
 ### Timestamping
 Planned RFC3161 support:
-- DigiCert TSA
-- Sectigo TSA
-- GlobalSign TSA
-- Entrust TSA
+- [DigiCert TSA](https://github.com/digicert)
+- [Sectigo TSA](https://github.com/sectigo)
+- [GlobalSign TSA](https://github.com/globalsign)
+- [Entrust TSA](https://github.com/EntrustCorporation)
 - Custom TSA endpoints
 
 ### Security Controls
@@ -51,9 +51,15 @@ All security options are disabled by default.
 
 ## Supported Platforms
 
-- Windows 10 x86
-- Windows 10 x64
-- Windows 11 x64
+| OS | Version | osArch |
+|---|---|---|
+| Windows | 7 | x86-64 |
+| Windows | 8 | x86-64 |
+| Windows | 8.1 | x86-64 |
+| Windows | 10 | x86-64 |
+| Windows | 11 | x86-64 |
+| Windows Server | (version varies) | x86-64 |
+
 
 ---
 
