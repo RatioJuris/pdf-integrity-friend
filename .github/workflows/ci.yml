@@ -4,26 +4,33 @@ on:
   push:
     branches:
       - main
+
   pull_request:
     branches:
       - main
+
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   actions: write
   checks: write
 
-# Identifies this automated process under the RatioJurisBot configuration namespace
 env:
-  BOT_NAME: "RatioJurisBot"
+  BOT_NAME: RatioJurisBot
 
 jobs:
+
   build:
+
+    runs-on: windows-latest
+
     strategy:
       fail-fast: false
+
       matrix:
         include:
+
           - arch: x64
             qt_arch: win64_msvc2022_64
             build_dir: build/x64
@@ -32,9 +39,8 @@ jobs:
             qt_arch: win32_msvc2022
             build_dir: build/x86
 
-    runs-on: windows-latest
-
     steps:
+
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -44,21 +50,17 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python Dependencies
+        shell: pwsh
         run: |
           python -m pip install --upgrade pip
           pip install pillow cairosvg
 
-      - name: Install Cairo Library Binaries
-        run: |
-          choco install cairo -y
-          echo "C:\Program Files\Cairo\bin" >> $GITHUB_PATH
-        shell: bash
-
       - name: Generate Icons
+        shell: pwsh
         run: |
           python scripts/generate_icons.py
 
-      - name: Verify Generated Files
+      - name: Verify Generated Resources
         shell: pwsh
         run: |
           Get-ChildItem res/generated
@@ -72,17 +74,20 @@ jobs:
           arch: ${{ matrix.qt_arch }}
           modules: qtpdf
 
-      - name: Configure
+      - name: Configure CMake
+        shell: pwsh
         run: |
           cmake `
             -S . `
-            -B ${{ matrix.build_dir }} `
+            -B "${{ matrix.build_dir }}" `
             -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
+        shell: pwsh
         run: |
           cmake `
-            --build ${{ matrix.build_dir }} --config Release
+            --build "${{ matrix.build_dir }}" `
+            --config Release
 
       - name: Verify Executable
         shell: pwsh
@@ -92,7 +97,7 @@ jobs:
             -Recurse `
             -Filter "*.exe"
 
-      - name: Upload Build
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.arch }}
