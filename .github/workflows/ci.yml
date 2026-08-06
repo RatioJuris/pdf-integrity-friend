@@ -1,0 +1,118 @@
+name: Windows CI Build
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+
+  build-x64:
+
+    name: Windows x64 Build
+
+    runs-on: windows-latest
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Qt 6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.0"
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          modules: qtpdf
+
+      - name: Setup OpenSSL
+        uses: lukka/get-cmake@latest
+
+      - name: Create Build Folder
+        run: |
+          if (!(Test-Path build)) {
+            New-Item -ItemType Directory build
+          }
+
+      - name: Configure
+        run: |
+          cmake `
+            -S . `
+            -B build/x64 `
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cmake `
+            --build build/x64 `
+            --config Release
+
+      - name: Upload Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64-build
+          path: build/x64
+
+  build-x86:
+
+    name: Windows x86 Build
+
+    runs-on: windows-latest
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
+      - name: Install Qt 6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.0"
+          host: windows
+          target: desktop
+          arch: win32_msvc2022
+          modules: qtpdf
+
+      - name: Create Build Folder
+        run: |
+          if (!(Test-Path build)) {
+            New-Item -ItemType Directory build
+          }
+
+      - name: Configure
+        run: |
+          cmake `
+            -S . `
+            -B build/x86 `
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cmake `
+            --build build/x86 `
+            --config Release
+
+      - name: Upload Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x86-build
+          path: build/x86
