@@ -1,0 +1,84 @@
+/* =========================================================
+   PDF Integrity Friend
+   Version: 1.0-Beta
+   Publisher: Ratio Juris
+   Dark Theme
+   ========================================================= */
+
+QMainWindow
+{
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+}
+
+QWidget
+{
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+    font-family: "Segoe UI";
+    font-size: 10pt;
+}
+
+QGroupBox
+{
+    border: 1px solid #3c3c3c;
+    border-radius: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    background-color: #252526;
+    font-weight: 600;
+}
+
+QGroupBox::title
+{
+    subcontrol-origin: margin;
+    left: 12px;
+    padding: 0 6px;
+}
+
+QPushButton
+{
+    min-height: 34px;
+    padding: 6px 14px;
+
+    border: 1px solid #0e639c;
+    border-radius: 6px;
+
+    background-color: #0e639c;
+    color: white;
+
+    font-weight: 600;
+}
+
+QPushButton:hover
+{
+    background-color: #1177bb;
+}
+
+QPushButton:pressed
+{
+    background-color: #094771;
+}
+
+QPushButton:disabled
+{
+    background-color: #555555;
+    border-color: #555555;
+    color: #aaaaaa;
+}
+
+QLineEdit,
+QComboBox,
+QPlainTextEdit
+{
+    background-color: #2d2d30;
+    color: #f0f0f0;
+
+    border: 1px solid #555555;
+    border-radius: 5px;
+
+    padding: 5px;
+}
+
+QLineEdit:focus,
+QComboBox:focus,
