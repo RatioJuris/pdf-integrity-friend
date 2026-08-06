@@ -1,0 +1,60 @@
+name: Release Packaging
+
+on:
+
+  push:
+    tags:
+      - "v*"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+
+  build-x64:
+
+    runs-on: windows-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.0"
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          modules: qtpdf
+
+      - name: Configure
+        run: |
+          cmake `
+            -S . `
+            -B build/x64 `
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cmake `
+            --build build/x64 `
+            --config Release
+
+      - name: Create Release Directories
+        run: |
+          mkdir release-latest
+          mkdir release-latest\windows-x64
+          mkdir release-latest\portable
+
+      - name: Copy Application
+        run: |
+          xcopy build\x64\Release\* release-latest\windows-x64\ /E /I /Y
+
+    
