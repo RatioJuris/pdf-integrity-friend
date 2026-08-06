@@ -1,0 +1,130 @@
+/* =========================================================
+   PDF Integrity Friend
+   Version: 1.0-Beta
+   Publisher: Ratio Juris
+   ========================================================= */
+
+QMainWindow
+{
+    background-color: #f5f7fa;
+    color: #202124;
+}
+
+QWidget
+{
+    font-family: "Segoe UI";
+    font-size: 10pt;
+    color: #202124;
+}
+
+QGroupBox
+{
+    background: #ffffff;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    font-weight: 600;
+}
+
+QGroupBox::title
+{
+    subcontrol-origin: margin;
+    left: 12px;
+    padding: 0 6px;
+}
+
+QPushButton
+{
+    min-height: 34px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid #1565c0;
+    background-color: #1565c0;
+    color: white;
+    font-weight: 600;
+}
+
+QPushButton:hover
+{
+    background-color: #1976d2;
+}
+
+QPushButton:pressed
+{
+    background-color: #0d47a1;
+}
+
+QPushButton:disabled
+{
+    background-color: #b0b0b0;
+    border-color: #b0b0b0;
+    color: #f0f0f0;
+}
+
+QLineEdit,
+QComboBox,
+QPlainTextEdit
+{
+    background: #ffffff;
+    border: 1px solid #c7c7c7;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+QLineEdit:focus,
+QComboBox:focus,
+QPlainTextEdit:focus
+{
+    border: 2px solid #1565c0;
+}
+
+QProgressBar
+{
+    border: 1px solid #c7c7c7;
+    border-radius: 6px;
+    text-align: center;
+    background: white;
+}
+
+QProgressBar::chunk
+{
+    background-color: #1565c0;
+    border-radius: 5px;
+}
+
+QStatusBar
+{
+    background: #ffffff;
+    border-top: 1px solid #d0d7de;
+}
+
+QMenuBar
+{
+    background: #ffffff;
+}
+
+QMenuBar::item:selected
+{
+    background: #e3f2fd;
+}
+
+QMenu
+{
+    background: #ffffff;
+    border: 1px solid #d0d7de;
+}
+
+QTableView
+{
+    gridline-color: #d0d7de;
+    background-color: #ffffff;
+}
+
+QHeaderView::section
+{
+    background-color: #e9eef5;
+    padding: 5px;
+    border: 1px solid #d0d7de;
+    font-weight: 600;
+}
