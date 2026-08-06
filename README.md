@@ -2,7 +2,7 @@
 
 **Version:** 1.0-Beta  
 **Publisher:** Ratio Juris  
-**Repository:** https://github.com/RatioJuris/pdf-integrity-friend
+**Repository:** [@RatioJuris/pdf-integrity-friend](https://github.com/RatioJuris/pdf-integrity-friend/)
 
 ---
 
@@ -75,10 +75,10 @@ pdf-integrity-friend/
 
 ## License
 
-See LICENSE.md
+See [LICENSE](LICENSE.md)
 
 ---
 
 ## Author
 
-Ratio Juris
+*[Ratio Juris](https://github.com/RatioJuris/)*, Pseudonym ≠ Anonymous 
