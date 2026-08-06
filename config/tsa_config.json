@@ -1,0 +1,79 @@
+{
+    "schema_version": "1.0",
+    "application": {
+        "name": "PDF Integrity Friend",
+        "version": "1.0-Beta",
+        "publisher": "Ratio Juris",
+        "repository": "https://github.com/RatioJuris/pdf-integrity-friend"
+    },
+
+    "default_provider": "digicert",
+
+    "network": {
+        "connection_timeout_seconds": 15,
+        "request_timeout_seconds": 30,
+        "retry_count": 3,
+        "verify_ssl": true
+    },
+
+    "providers": [
+        {
+            "id": "digicert",
+            "name": "DigiCert TSA",
+            "url": "http://timestamp.digicert.com",
+            "enabled": true,
+            "auth_required": false,
+            "description": "Public RFC3161 time stamping service"
+        },
+        {
+            "id": "sectigo",
+            "name": "Sectigo TSA",
+            "url": "http://timestamp.sectigo.com",
+            "enabled": true,
+            "auth_required": false,
+            "description": "Public RFC3161 time stamping service"
+        },
+        {
+            "id": "globalsign",
+            "name": "GlobalSign TSA Advanced",
+            "url": "http://timestamp.globalsign.com/tsa/r6advanced1",
+            "enabled": true,
+            "auth_required": false,
+            "description": "GlobalSign advanced timestamp authority"
+        },
+        {
+            "id": "entrust",
+            "name": "Entrust TSA RFC3161 SHA2",
+            "url": "http://timestamp.entrust.net/TSS/RFC3161sha2TS",
+            "enabled": true,
+            "auth_required": false,
+            "description": "Entrust RFC3161 SHA2 timestamp service"
+        },
+        {
+            "id": "certum",
+            "name": "Certum TSA",
+            "url": "http://time.certum.pl",
+            "enabled": true,
+            "auth_required": false,
+            "description": "Certum public timestamp service"
+        },
+        {
+            "id": "dfn",
+            "name": "DFN-PKI TSA",
+            "url": "http://zeitstempel.dfn.de",
+            "enabled": true,
+            "auth_required": false,
+            "description": "German DFN-PKI timestamp service"
+        }
+    ],
+
+    "custom_providers": [],
+
+    "future_extensions": {
+        "allow_authenticated_tsa": true,
+        "allow_custom_headers": true,
+        "allow_api_keys": true,
+        "allow_client_certificates": true,
+        "allow_proxy_support": true
+    }
+}
