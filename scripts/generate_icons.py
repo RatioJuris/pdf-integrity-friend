@@ -4,13 +4,12 @@ import sys
 
 
 def install_dependencies() -> None:
-    """Detects and installs pure-Python image processing libraries automatically."""
+    """Detects and installs missing Python dependencies automatically."""
     print("Validating build dependencies...")
 
     required_packages = {
         "PIL": "pillow",
-        "svglib": "svglib",
-        "reportlab": "reportlab",
+        "PySide6": "PySide6",  # Replaced svglib/reportlab with Qt's robust SVG engine
     }
 
     for import_name, pip_name in required_packages.items():
@@ -28,8 +27,9 @@ def install_dependencies() -> None:
 install_dependencies()
 
 from PIL import Image
-from reportlab.graphics import renderPM
-from svglib.svglib import svg2rlg
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QColor, QPainter, QPixmap
+from PySide6.QtSvg import QSvgRenderer
 
 # Directory Mappings
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -40,26 +40,33 @@ ICON_SIZES = [16, 24, 32, 48, 64, 128, 256, 512]
 
 
 def generate_pngs() -> None:
-    """Translates SVG to structural multi-tier PNG dimensions."""
+    """Translates SVG to structural multi-tier PNG dimensions using Qt engine."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    print("Compiling asset vectors to PNG formats...")
+    print("Compiling asset vectors to PNG formats using Qt SVG engine...")
+
+    # Load SVG file via Qt's renderer
+    renderer = QSvgRenderer(str(SVG_ICON))
+    if not renderer.isValid():
+        raise ValueError(f"Could not parse or validate SVG schema: {SVG_ICON}")
 
     for size in ICON_SIZES:
         output_file = OUTPUT_DIR / f"app-icon-{size}.png"
 
-        drawing = svg2rlg(str(SVG_ICON))
-        if drawing is None:
-            raise ValueError(f"Could not parse SVG schema: {SVG_ICON}")
+        # Create transparent canvas backing
+        pixmap = QPixmap(QSize(size, size))
+        pixmap.fill(QColor(Qt.GlobalColor.transparent))
 
-        # Compute aspect aspect metrics
-        scale_x = size / drawing.minWidth()
-        scale_y = size / drawing.minHeight()
+        # Paint SVG uniformly on top of the target size canvas
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        renderer.render(painter)
+        painter.end()
 
-        drawing.width = size
-        drawing.height = size
-        drawing.scale(scale_x, scale_y)
+        # Save output image
+        if not pixmap.save(str(output_file), "PNG"):
+            raise IOError(f"Failed to write image file: {output_file}")
 
-        renderPM.drawToFile(drawing, str(output_file), fmt="PNG")
         print(f"Generated {output_file.name}")
 
     print("PNG generation finished.")
