@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+
   pull_request:
     branches:
       - main
+
   workflow_dispatch:
 
 permissions:
@@ -18,13 +20,17 @@ env:
   BOT_NAME: RatioJurisBot
 
 jobs:
+
   build:
+
     runs-on: windows-latest
 
     strategy:
       fail-fast: false
+
       matrix:
         include:
+
           - arch: x64
             qt_arch: win64_msvc2022_64
             build_dir: build/x64
@@ -34,6 +40,7 @@ jobs:
             build_dir: build/x86
 
     steps:
+
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -42,13 +49,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Python Dependencies
-        shell: pwsh
-        run: |
-          python -m pip install --upgrade pip
-          # 🛠️ SWAPPED TO PURE-PYTHON ALTERNATIVES
-          pip install pillow svglib reportlab
-
+      # 🛠️ REMOVED EXPLICIT PIP PACKAGES. THE SCRIPT SELF-INSTALLS AUTOMATICALLY.
       - name: Generate Icons
         shell: pwsh
         run: |
