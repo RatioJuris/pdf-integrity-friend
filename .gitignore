@@ -1,0 +1,115 @@
+# =========================================================
+# PDF Integrity Friend
+# Version 1.0-Beta
+# =========================================================
+
+# Build Output
+/build/
+/build/**
+
+# Release Output
+/release-latest/
+/release-latest/**
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+install_manifest.txt
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.VC.db
+*.VC.opendb
+
+# MSVC Build
+*.obj
+*.pdb
+*.ilk
+*.idb
+*.ipch
+*.tlog
+
+# Qt
+*.pro.user
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+*.qmlc
+*.jsc
+*.rcc
+
+# Qt Deployment
+plugins/
+translations/
+
+# Generated Icons
+res/generated/*.png
+res/generated/*.ico
+
+# Installer Output
+*.msi
+*.wixpdb
+*.wixobj
+
+# Portable Packages
+*.zip
+*.7z
+
+# Logs
+*.log
+logs/
+
+# Crash Dumps
+*.dmp
+crash.log
+
+# OpenSSL Temporary
+*.pem
+*.csr
+*.pfx
+*.p12.tmp
+
+# Temporary Files
+*.tmp
+*.temp
+
+# OS Files
+Thumbs.db
+Desktop.ini
+
+# Windows
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# macOS
+.DS_Store
+
+# Coverage
+coverage/
+*.gcda
+*.gcno
+
+# Test Output
+test-output/
+
+# Cache
+.cache/
+
+# Qt Creator
+CMakeLists.txt.user
+
+# Generated Release Metadata
+SHA256SUMS.txt
+
+# Future Signatures Export Cache
+signature-cache/
+
+# Future TSA Cache
+tsa-cache/
