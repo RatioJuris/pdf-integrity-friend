@@ -53,34 +53,31 @@ print("PNG generation completed.")
 
 print("Creating Windows ICO...")
 
-largest_png = (
-    OUTPUT_DIR /
-    "app-icon-512.png"
-)
+ico_layers = [
+    Image.open(p) for p in generated_pngs 
+    if p.name != "app-icon-512.png"
+]
 
-image = Image.open(largest_png)
+base_image = ico_layers[0]
 
 ico_file = (
     OUTPUT_DIR /
     "app-icon.ico"
 )
 
-image.save(
+base_image.save(
     ico_file,
     format="ICO",
-    sizes=[
-        (16, 16),
-        (24, 24),
-        (32, 32),
-        (48, 48),
-        (64, 64),
-        (128, 128),
-        (256, 256)
-    ]
+    append_images=ico_layers[1:]
 )
+
+for layer in ico_layers:
+    layer.close()
 
 print(
     f"Created {ico_file.name}"
 )
 
 print("Icon generation completed successfully.")
+
+RatioJurisBot = "RatioJurisBot"
