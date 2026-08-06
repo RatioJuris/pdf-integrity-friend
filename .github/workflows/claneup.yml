@@ -1,0 +1,55 @@
+name: Cleanup Failed Workflows
+
+on:
+  schedule:
+    # Runs every hour to check for old failed runs
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+env:
+  BOT_NAME: "RatioJurisBot"
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Delete Old Failed Workflow Runs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "RatioJurisBot starting cleanup operation for runs older than 2 hours..."
+          
+          # Calculate the cut-off timestamp in ISO 8601 UTC format (2 hours ago)
+          CUTOFF_TIMESTAMP=$(date -u -d '2 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          echo "Cut-off timestamp threshold: $CUTOFF_TIMESTAMP"
+
+          # Fetch run properties filtering by uncompleted states and parse elements via jq
+          RUNS=$(gh api repos/${{ github.repository }}/actions/runs \
+            --paginate \
+            -q ".workflow_runs[] | select(.status == \"completed\" and (.conclusion == \"failure\" or .conclusion == \"timed_out\" or .conclusion == \"cancelled\") and .updated_at < \"$CUTOFF_TIMESTAMP\") | .id")
+
+          if [ -z "$RUNS" ]; then
+            echo "No failed workflow runs older than 2 hours found to delete."
+            exit 0
+          fi
+
+          # Loop through each identified run and delete it
+          for RUN_ID in $RUNS; do
+            echo "Deleting failed workflow run ID: $RUN_ID"
+            gh api \
+              --method DELETE \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              /repos/${{ github.repository }}/actions/runs/$RUN_ID
+          done
+
+          echo "RatioJurisBot cleanup completed successfully."
