@@ -2,29 +2,38 @@ VS_VERSION_INFO VERSIONINFO
  FILEVERSION 1,0,0,0
  PRODUCTVERSION 1,0,0,0
  FILEFLAGSMASK 0x3fL
+
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+
  FILEOS 0x40004L
  FILETYPE 0x1L
  FILESUBTYPE 0x0L
+
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
-        BLOCK "040904E4"
+        BLOCK "040904B0"
         BEGIN
             VALUE "CompanyName", "Ratio Juris"
             VALUE "FileDescription", "PDF Integrity Friend"
             VALUE "FileVersion", "1.0-Beta"
             VALUE "InternalName", "pdf-integrity-friend"
+            VALUE "LegalCopyright", "Copyright (C) Ratio Juris"
             VALUE "OriginalFilename", "pdf-integrity-friend.exe"
             VALUE "ProductName", "PDF Integrity Friend"
             VALUE "ProductVersion", "1.0-Beta"
+            VALUE "Comments", "Professional PDF signing, timestamping and document protection software"
             VALUE "Publisher", "Ratio Juris"
-            VALUE "Comments",
-                  "Professional PDF signing and RFC3161 timestamping application."
+            VALUE "Website", "https://github.com/RatioJuris/pdf-integrity-friend"
         END
     END
 
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x409, 1252
+        VALUE "Translation", 0x409, 1200
     END
 END
