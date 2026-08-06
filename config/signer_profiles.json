@@ -1,0 +1,136 @@
+{
+    "schema_version": "1.0",
+
+    "application": {
+        "name": "PDF Integrity Friend",
+        "version": "1.0-Beta"
+    },
+
+    "default_profile": "legal_signature",
+
+    "profiles": [
+        {
+            "id": "legal_signature",
+            "name": "Legal Signature",
+
+            "visible": true,
+
+            "elements": {
+                "show_signer_name": true,
+                "show_signature_image": true,
+                "show_signing_date": true,
+                "show_signing_time": true,
+                "show_certificate_subject": true,
+                "show_certificate_issuer": true,
+                "show_timestamp": true,
+                "show_tsa_name": true,
+                "show_reason": true,
+                "show_location": true
+            },
+
+            "appearance": {
+                "width": 260,
+                "height": 120,
+                "font_size": 9,
+                "border": true
+            }
+        },
+
+        {
+            "id": "simple_signature",
+            "name": "Simple Signature",
+
+            "visible": true,
+
+            "elements": {
+                "show_signer_name": true,
+                "show_signature_image": true,
+                "show_signing_date": true,
+                "show_signing_time": false,
+                "show_certificate_subject": false,
+                "show_certificate_issuer": false,
+                "show_timestamp": false,
+                "show_tsa_name": false,
+                "show_reason": false,
+                "show_location": false
+            },
+
+            "appearance": {
+                "width": 220,
+                "height": 90,
+                "font_size": 9,
+                "border": true
+            }
+        },
+
+        {
+            "id": "timestamp_only",
+            "name": "Timestamp Only",
+
+            "visible": true,
+
+            "elements": {
+                "show_signer_name": false,
+                "show_signature_image": false,
+                "show_signing_date": true,
+                "show_signing_time": true,
+                "show_certificate_subject": false,
+                "show_certificate_issuer": false,
+                "show_timestamp": true,
+                "show_tsa_name": true,
+                "show_reason": false,
+                "show_location": false
+            },
+
+            "appearance": {
+                "width": 240,
+                "height": 80,
+                "font_size": 8,
+                "border": true
+            }
+        },
+
+        {
+            "id": "corporate_signature",
+            "name": "Corporate Signature",
+
+            "visible": true,
+
+            "elements": {
+                "show_signer_name": true,
+                "show_signature_image": true,
+                "show_signing_date": true,
+                "show_signing_time": true,
+                "show_certificate_subject": true,
+                "show_certificate_issuer": true,
+                "show_timestamp": true,
+                "show_tsa_name": true,
+                "show_reason": true,
+                "show_location": true
+            },
+
+            "appearance": {
+                "width": 320,
+                "height": 140,
+                "font_size": 10,
+                "border": true,
+                "show_company_logo": true
+            }
+        }
+    ],
+
+    "default_values": {
+        "reason": "",
+        "location": "",
+        "contact_information": ""
+    },
+
+    "future_extensions": {
+        "allow_multiple_signatures_per_page": true,
+        "allow_drag_and_drop_placement": true,
+        "allow_signature_templates": true,
+        "allow_qr_code_embedding": true,
+        "allow_company_branding": true,
+        "allow_stamp_mode": true
+    }
+}
