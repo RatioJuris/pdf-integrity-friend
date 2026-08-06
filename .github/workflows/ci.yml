@@ -1,4 +1,4 @@
-name: Windows CI Build
+name: PDF Integrity Friend CI
 
 on:
   push:
@@ -16,60 +16,23 @@ permissions:
 
 jobs:
 
-  build-x64:
+  build:
 
-    name: Windows x64 Build
+    strategy:
+      fail-fast: false
 
-    runs-on: windows-latest
+      matrix:
+        include:
 
-    steps:
+          - name: x64
+            qt_arch: win64_msvc2022_64
+            build_dir: build/x64
+            release_dir: release-latest/windows-x64
 
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Install Qt 6
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: "6.8.0"
-          host: windows
-          target: desktop
-          arch: win64_msvc2022_64
-          modules: qtpdf
-
-      - name: Setup OpenSSL
-        uses: lukka/get-cmake@latest
-
-      - name: Create Build Folder
-        run: |
-          if (!(Test-Path build)) {
-            New-Item -ItemType Directory build
-          }
-
-      - name: Configure
-        run: |
-          cmake `
-            -S . `
-            -B build/x64 `
-            -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build
-        run: |
-          cmake `
-            --build build/x64 `
-            --config Release
-
-      - name: Upload Build
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-x64-build
-          path: build/x64
-
-  build-x86:
-
-    name: Windows x86 Build
+          - name: x86
+            qt_arch: win32_msvc2022
+            build_dir: build/x86
+            release_dir: release-latest/windows-x86
 
     runs-on: windows-latest
 
@@ -78,41 +41,84 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          arch: x86
+          python-version: "3.12"
 
-      - name: Install Qt 6
+      - name: Install Python Dependencies
+        run: |
+          pip install pillow
+          pip install cairosvg
+
+      - name: Generate Icons
+        run: |
+          python scripts/generate_icons.py
+
+      - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
           version: "6.8.0"
           host: windows
           target: desktop
-          arch: win32_msvc2022
+          arch: ${{ matrix.qt_arch }}
           modules: qtpdf
 
-      - name: Create Build Folder
+      - name: Configure CMake
         run: |
-          if (!(Test-Path build)) {
-            New-Item -ItemType Directory build
-          }
-
-      - name: Configure
-        run: |
-          cmake `
-            -S . `
-            -B build/x86 `
+          cmake ^
+            -S . ^
+            -B ${{ matrix.build_dir }} ^
             -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: |
-          cmake `
-            --build build/x86 `
+          cmake ^
+            --build ${{ matrix.build_dir }} ^
             --config Release
 
-      - name: Upload Build
+      - name: Create Release Folder
+        shell: pwsh
+        run: |
+          New-Item `
+            -ItemType Directory `
+            -Force `
+            -Path "${{ matrix.release_dir }}"
+
+      - name: Copy Build Output
+        shell: pwsh
+        run: |
+          Copy-Item `
+            "${{ matrix.build_dir }}\\Release\\*" `
+            "${{ matrix.release_dir }}" `
+            -Recurse `
+            -Force
+
+      - name: Copy Documentation
+        shell: pwsh
+        run: |
+          Copy-Item LICENSE.md "${{ matrix.release_dir }}"
+          
+          if(Test-Path README.md)
+          {
+              Copy-Item README.md "${{ matrix.release_dir }}"
+          }
+
+          if(Test-Path SECURITY.md)
+          {
+              Copy-Item SECURITY.md "${{ matrix.release_dir }}"
+          }
+
+      - name: Create Portable ZIP
+        shell: pwsh
+        run: |
+          Compress-Archive `
+            -Path "${{ matrix.release_dir }}\\*" `
+            -DestinationPath "release-latest/pdf-integrity-friend-${{ matrix.name }}.zip" `
+            -Force
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-x86-build
-          path: build/x86
+          name: pdf-integrity-friend-${{ matrix.name }}
+          path: release-latest/
