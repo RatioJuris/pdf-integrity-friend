@@ -4,51 +4,11 @@ import sys
 
 
 def install_dependencies() -> None:
-    """Detects and installs missing system and Python dependencies automatically."""
-    print("Checking system environment and dependencies...")
-
-    # 1. Handle Linux System dependencies if running on GitHub Actions / Ubuntu
-    # CairoSVG requires libcairo2 binaries present on the OS layer.
-    if sys.platform.startswith("linux"):
-        try:
-            # Check if cairo library is missing
-            subprocess.run(
-                ["ldconfig", "-p"],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            # If not found or in CI, safely attempt installing system binaries
-            print("Ensuring Cairo system libraries are present via apt...")
-            subprocess.run(
-                [
-                    "sudo",
-                    "apt-get",
-                    "update",
-                    "-y",
-                ],
-                capture_output=True,
-            )
-            subprocess.run(
-                [
-                    "sudo",
-                    "apt-get",
-                    "install",
-                    "-y",
-                    "libcairo2",
-                    "libffi-dev",
-                ],
-                check=True,
-            )
-        except Exception as e:
-            print(
-                f"Note: System-level Cairo dependency check skipped or failed: {e}"
-            )
-
-    # 2. Check and install Python Packages
+    """Automatically checks and installs missing Python dependencies via pip."""
     required_packages = {
-        "cairosvg": "cairosvg",
-        "PIL": "pillow",  # Import name is PIL, pip package name is pillow
+        "PIL": "pillow",
+        "svglib": "svglib",
+        "reportlab": "reportlab",
     }
 
     for import_name, pip_name in required_packages.items():
@@ -57,45 +17,45 @@ def install_dependencies() -> None:
         except ImportError:
             print(f"Missing Python dependency: '{pip_name}'. Installing...")
             subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    pip_name,
-                ],
-                check=True,
+                [sys.executable, "-m", "pip", "install", pip_name], check=True
             )
             print(f"Successfully installed {pip_name}.")
 
 
-# Trigger immediate self-installation before importing libraries that might crash
+# Run auto-install routine prior to library binding
 install_dependencies()
 
-# safely import modules now that installation guarantees their existence
-import cairosvg
 from PIL import Image
+from reportlab.graphics import renderPM
+from svglib.svglib import svg2rlg
 
-# Structural Directory Setup
+# Directory Setup
 ROOT_DIR = Path(__file__).resolve().parent.parent
 SVG_ICON = ROOT_DIR / "res" / "app-icon.svg"
 OUTPUT_DIR = ROOT_DIR / "res" / "generated"
 
-ICON_SIZES =
+ICON_SIZES = [16, 24, 32, 48, 64, 128, 256, 512]
 
 
 def generate_pngs() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    print("Generating PNG files...")
+    print("Generating PNG files using pure-Python engine...")
 
     for size in ICON_SIZES:
         output_file = OUTPUT_DIR / f"app-icon-{size}.png"
-        cairosvg.svg2png(
-            url=str(SVG_ICON),
-            write_to=str(output_file),
-            output_width=size,
-            output_height=size,
-        )
+
+        drawing = svg2rlg(str(SVG_ICON))
+        if drawing is None:
+            raise ValueError(f"Failed to parse SVG file: {SVG_ICON}")
+
+        scale_x = size / drawing.minWidth()
+        scale_y = size / drawing.minHeight()
+
+        drawing.width = size
+        drawing.height = size
+        drawing.scale(scale_x, scale_y)
+
+        renderPM.drawToFile(drawing, str(output_file), fmt="PNG")
         print(f"Generated {output_file.name}")
 
     print("PNG generation completed.")
@@ -116,7 +76,7 @@ def generate_ico() -> None:
             ico_layers.append(Image.open(png_path))
 
         ico_file = OUTPUT_DIR / "app-icon.ico"
-        base_image = ico_layers
+        base_image = ico_layers[0]
         base_image.save(ico_file, format="ICO", append_images=ico_layers[1:])
         print(f"Created {ico_file.name}")
     finally:
@@ -132,6 +92,7 @@ def generate_installer_assets() -> None:
         raise FileNotFoundError(f"Missing source image: {source_png}")
 
     image = Image.open(source_png)
+
     banner = image.resize((493, 58), Image.Resampling.LANCZOS)
     banner.save(OUTPUT_DIR / "installer-banner.bmp", format="BMP")
 
@@ -172,6 +133,7 @@ def main() -> int:
         generate_ico()
         generate_installer_assets()
         verify_output()
+
         print("Icon generation completed successfully.")
         return 0
     except Exception as ex:
